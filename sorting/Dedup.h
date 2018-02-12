@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 #include <cassert>
+#include <signal.h>
 
 template <typename T>
 class Dedup
@@ -33,9 +34,12 @@ class Dedup
     size_t
     sortDedup(T* arr, size_t start, size_t end)
         {
-        if ((end - start) < _curr_size) {
+        // > instead of <
+        // не той код неправильний пароль в космосі аварія екіпаж загине
+        // другий раз, в тому ж файлі. ех
+        if ((end - start) > _curr_size) {
             _curr_size = end - start;
-            _aux.resize(_curr_size);
+            _aux.reserve(_curr_size);
         }
         return sortDedupHelper(arr, start, end) - start;
         }
@@ -52,7 +56,6 @@ class Dedup
     bool (*equals)(T const & a, T const & b);
     bool (*less)(T const & a, T const & b);
     void (*doSomethingWithEqualElements)(T & a, T const & b);
-
     
     bool
     lessEquals(T const & a, T const & b)

@@ -39,6 +39,10 @@ IndexBuilding
         void
         indexFile(std::string filePath);
         
+        void writeToDatabase(
+            WordAndPositions const* words[],
+            size_t size);
+        
         private:
         IndexBuilder(IndexBuilder &);
         

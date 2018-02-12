@@ -38,6 +38,12 @@ WordAndPositions
         : _word(word)
         , _positions(1, position)
         {
+        ++freeID;
+        }
+    
+    ~WordAndPositions()
+        {
+        ++deletedNum;
         }
     
     bool
@@ -53,11 +59,20 @@ WordAndPositions
         {
         return _word.compare(b._word) == 0;
         }
+
+    static size_t createdCount() { return freeID; }
+    static size_t deletedCount() { return deletedNum; }
     
     private:
+    static size_t freeID;
+    static size_t deletedNum;
     std::string _word;
     std::forward_list<unsigned> _positions;
     };
+
+    size_t WordAndPositions::freeID = 0;
+    size_t WordAndPositions::deletedNum = 0;
+
 // end class WordAndPositions
 
     std::ostream&
@@ -128,10 +143,20 @@ IndexBuilder::~IndexBuilder()
     }
 
 
+void IndexBuilder::writeToDatabase(
+    WordAndPositions const* words[],
+    size_t size)
+    {
+    WordAndPositions const * * i = words, * * l = i + size;
+    for ( ; i!=l; ++i )
+        {
+        
+        }
+    }
+
 void
 IndexBuilder::indexFile(std::string filePath)
     {
-    size_t new_size;
     ifstream file (filePath);
     unsigned wordCount (0);
     string word;
@@ -141,20 +166,10 @@ IndexBuilder::indexFile(std::string filePath)
         auto wordPos = new WordAndPositions(word, ++wordCount);
         _words.push_back(wordPos);
         }
-        
-    if (wordCount > 0)
-        {
-        //TODO:
-        new_size = _dedup->sortDedup(&_words[0], 0, wordCount);
-//        for (size_t i=0; i!=new_size; ++i)
-//            {
-//            cout << *_words[i] << '\n';
-//            }
-        }
-        std::cout << "number of words: " << wordCount << '\n';
-        
-//    memset(&_words[0], 0, _words.size());
-    _words.clear();
+    size_t new_size = (wordCount > 0)
+        ? _dedup->sortDedup(&_words[0], 0, wordCount)
+        : 0;
+    _words.resize(new_size);
     }
 
 void
@@ -167,11 +182,20 @@ IndexBuilder::index(
     ofstream files ( indexFilePath);
         
     string path;
-    
     while (getline(filePathsFile, path))
         {
         std::cout << path << '\n';
+        // fill _words with words/positions
         indexFile(path);
+        
+        // write it to database
+        // come up with an ID
+        
+        
+        for (auto w: _words)
+            {
+            delete w;
+            }
         }
         
     std::cout << "end" << '\n';
