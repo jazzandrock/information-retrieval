@@ -6,24 +6,23 @@
 //  Copyright (c) 2018 Oleg. All rights reserved.
 //
 
-#include "IndexBuilder.h"
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
+#include <algorithm>
 #include <forward_list>
+#include "boost/filesystem.hpp"
+#include "IndexBuilder.h"
 #include "../sorting/Dedup.h"
 
+using namespace std;
+using namespace IndexBuilding;
 
 class
 WordAndPositions
     {
-    friend
-    std::ostream&
-    operator<< (
-        std::ostream & stream,
-        WordAndPositions const & wordPositions);
-        
     friend
     void
     mergeWordAndPositions(
@@ -32,7 +31,7 @@ WordAndPositions
         
     public:
     WordAndPositions(
-        std::string & word,
+        string const & word,
         unsigned position
         )
         : _word(word)
@@ -46,6 +45,21 @@ WordAndPositions
         ++deletedNum;
         }
     
+    string const &
+    word() const
+        {
+        return _word;
+        }
+
+    forward_list<unsigned> const &
+    positions() const
+        { return _positions; }
+        
+//    forward_list<unsigned> &
+//    positions()
+//        { return _positions; }
+        
+
     bool
     operator< (
         WordAndPositions const & b) const
@@ -80,9 +94,9 @@ WordAndPositions
         std::ostream & stream,
         WordAndPositions const & wordPositions)
         {
-        stream << "WordAndPositions: " << wordPositions._word << '\n';
+        stream << "WordAndPositions: " << wordPositions.word() << '\n';
         stream << "positions: ";
-        for (unsigned pos : wordPositions._positions)
+        for (unsigned pos: wordPositions.positions())
             {
             stream << pos << ' ';
             }
@@ -114,18 +128,13 @@ WordAndPositions
         {
         a->_positions.merge(b->_positions);
         delete b;
-        
-        // TODO:
-//        auto bb = const_cast<WordAndPositions *>(b);
-//        bb = nullptr;
-//        assert(b == nullptr);
         }
 
 
-using namespace std;
-using namespace IndexBuilding;
-
-IndexBuilder::IndexBuilder()
+IndexBuilder::IndexBuilder(
+    std::string const & databasePath,
+    std::string const & indexFilePath
+    )
     : _dedup(
         new Dedup<WordAndPositions*>(
             wordAndPositionsEquals,
@@ -133,7 +142,9 @@ IndexBuilder::IndexBuilder()
             mergeWordAndPositions
             )
         )
-    // , _words — default constructor suffices
+    , _words(1000000)
+    , _databasePath (databasePath)
+    , _indexFilePath (indexFilePath)
     {
     }
 
@@ -143,14 +154,80 @@ IndexBuilder::~IndexBuilder()
     }
 
 
-void IndexBuilder::writeToDatabase(
-    WordAndPositions const* words[],
-    size_t size)
+std::string IndexBuilder::getWordsFilePath(
+    unsigned long long id)
     {
-    WordAndPositions const * * i = words, * * l = i + size;
-    for ( ; i!=l; ++i )
+    ostringstream res;
+    res << _databasePath << '/' << id << "_words.txt";
+    return res.str();
+    }
+
+std::string IndexBuilder::getWordPositionsFilePath(
+    unsigned long long id,
+    std::string const & word)
+    {
+    ostringstream res;
+    res << _databasePath << '/';
+    for ( size_t i=0, l=min<size_t>(3, word.length())
+         ; i!=l; ++i)
         {
-        
+        res << word[i] << '/';
+        }
+    res << id << '_' << word << ".txt";
+    return res.str();
+    }
+
+size_t fillArrayWithNumbers(
+    unsigned number,
+    char * arr)
+    {
+    auto i = arr;
+    while (number)
+        {
+        auto n = static_cast<unsigned char>(number & 127);
+        number >>= 7;
+        if (number == 0) n |= 128;
+        *i++ = n;
+        }
+    return i - arr;
+    }
+
+void IndexBuilder::writeToDatabase(unsigned long long id)
+    {
+    using namespace boost;
+    ofstream wordsFile (getWordsFilePath(id));
+    ostringstream directory_address;
+
+    for (auto w : _words)
+        {
+        wordsFile << w->word() << '\n';
+    
+        try
+            {
+            ostringstream directory_address;
+            directory_address << _databasePath;
+            for (size_t c=0, l=min<size_t>(3, w->word().length())
+                ; c!=l; ++c)
+                {
+                    directory_address << '/' << w->word()[c];
+                    filesystem::create_directory(directory_address.str());
+                }
+            }
+        catch (filesystem::filesystem_error const & err)
+            {
+            cout << "can't write " << directory_address.str() << '\n';
+            }
+
+            
+        ofstream positionsFile(getWordPositionsFilePath(id, w->word()));
+        char* arr = new char[10];
+        auto_ptr<char> arr_deleter (arr);
+        for (unsigned pos: w->positions())
+            {
+            size_t end = fillArrayWithNumbers(pos, arr);
+            arr[end]='\0';
+            positionsFile << arr;
+            }
         }
     }
 
@@ -173,15 +250,16 @@ IndexBuilder::indexFile(std::string filePath)
     }
 
 void
-IndexBuilder::index(
-    string filePaths,
-    string databasePath,
-    string indexFilePath)
+IndexBuilder::index(string filePaths)
     {
     ifstream filePathsFile (filePaths);
-    ofstream files ( indexFilePath);
+    ofstream files ( _indexFilePath);
         
     string path;
+
+    unsigned long long ID = 0;
+    
+    unsigned counter(0);
     while (getline(filePathsFile, path))
         {
         std::cout << path << '\n';
@@ -190,23 +268,22 @@ IndexBuilder::index(
         
         // write it to database
         // come up with an ID
+        unsigned long long id = ++ID;
         
+        writeToDatabase(id);
+        
+        counter += _words.size();
         
         for (auto w: _words)
             {
             delete w;
             }
         }
-        
+    
+    
     std::cout << "end" << '\n';
+    std::cout << counter;
     }
-
-
-
-
-
-
-
 
 
 

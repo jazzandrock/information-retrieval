@@ -27,27 +27,45 @@ IndexBuilding
     IndexBuilder
         {
         public:
-        IndexBuilder();
+        IndexBuilder(
+            std::string const & databasePath,
+            std::string const & indexFilePath);
         ~IndexBuilder();
         
         void
-        index(
-            std::string filePaths,
-            std::string databasePath,
-            std::string indexFilePath);
+        index(std::string filePaths);
         
         void
         indexFile(std::string filePath);
         
-        void writeToDatabase(
-            WordAndPositions const* words[],
-            size_t size);
+        /**
+         * writes:
+         * a file with title: ID_words.txt,
+         * words separated by \n
+         *
+         * multiple files named ID_$word.positions
+         * a binary file with positions
+         * located in database/w/o/r/ID_$word.positions
+         */
+        void writeToDatabase(unsigned long long id);
         
         private:
         IndexBuilder(IndexBuilder &);
         
+        std::string getWordsFilePath(
+            unsigned long long id);
+        
+        std::string getWordPositionsFilePath(
+            unsigned long long id,
+            std::string const & word);
+        
+        void createDirectoriesIfNeeded(
+            std::string const & word);
+        
         Dedup<WordAndPositions*> * _dedup;
         std::vector<WordAndPositions*> _words;
+        std::string _databasePath;
+        std::string _indexFilePath;
         };
     }
 
