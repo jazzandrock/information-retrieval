@@ -7,129 +7,21 @@
 //
 
 #include <string>
+#include <regex>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
 #include <algorithm>
 #include <forward_list>
+#include <map>
 #include "boost/filesystem.hpp"
 #include "IndexBuilder.h"
-#include "../sorting/Dedup.h"
+#include "Dedup.h"
+#include "WordAndPositions.h"
 
 using namespace std;
 using namespace IndexBuilding;
-
-class
-WordAndPositions
-    {
-    friend
-    void
-    mergeWordAndPositions(
-        WordAndPositions * & a,
-        WordAndPositions *const & b);
-        
-    public:
-    WordAndPositions(
-        string const & word,
-        unsigned position
-        )
-        : _word(word)
-        , _positions(1, position)
-        {
-        ++freeID;
-        }
-    
-    ~WordAndPositions()
-        {
-        ++deletedNum;
-        }
-    
-    string const &
-    word() const
-        {
-        return _word;
-        }
-
-    forward_list<unsigned> const &
-    positions() const
-        { return _positions; }
-        
-//    forward_list<unsigned> &
-//    positions()
-//        { return _positions; }
-        
-
-    bool
-    operator< (
-        WordAndPositions const & b) const
-        {
-        return _word.compare(b._word) < 0;
-        }
-        
-    bool
-    operator== (
-        WordAndPositions const & b) const
-        {
-        return _word.compare(b._word) == 0;
-        }
-
-    static size_t createdCount() { return freeID; }
-    static size_t deletedCount() { return deletedNum; }
-    
-    private:
-    static size_t freeID;
-    static size_t deletedNum;
-    std::string _word;
-    std::forward_list<unsigned> _positions;
-    };
-
-    size_t WordAndPositions::freeID = 0;
-    size_t WordAndPositions::deletedNum = 0;
-
-// end class WordAndPositions
-
-    std::ostream&
-    operator<< (
-        std::ostream & stream,
-        WordAndPositions const & wordPositions)
-        {
-        stream << "WordAndPositions: " << wordPositions.word() << '\n';
-        stream << "positions: ";
-        for (unsigned pos: wordPositions.positions())
-            {
-            stream << pos << ' ';
-            }
-        stream << std::endl;
-        return stream;
-        }
-
-    bool
-    wordAndPositionsLess(
-        WordAndPositions *const & a,
-        WordAndPositions *const & b)
-        {
-        return *a < *b;
-        }
-    
-    bool
-    wordAndPositionsEquals(
-        WordAndPositions *const & a,
-        WordAndPositions *const & b)
-        {
-        return *a == *b;
-        }
-
-
-    void
-    mergeWordAndPositions(
-        WordAndPositions * & a,
-        WordAndPositions * const & b)
-        {
-        a->_positions.merge(b->_positions);
-        delete b;
-        }
-
 
 IndexBuilder::IndexBuilder(
     std::string const & databasePath,
@@ -139,7 +31,9 @@ IndexBuilder::IndexBuilder(
         new Dedup<WordAndPositions*>(
             wordAndPositionsEquals,
             wordAndPositionsLess,
-            mergeWordAndPositions
+            [] (WordAndPositions * & a,
+                WordAndPositions * const & b)
+                { a->merge(b); }
             )
         )
     , _words(1000000)
@@ -154,80 +48,99 @@ IndexBuilder::~IndexBuilder()
     }
 
 
-std::string IndexBuilder::getWordsFilePath(
-    unsigned long long id)
+std::string
+IndexBuilder::getWordsFilePath(
+    docid_t id)
     {
     ostringstream res;
-    res << _databasePath << '/' << id << "_words.txt";
+    res << _databasePath << '/' << id << ".wrdps";
     return res.str();
     }
 
-std::string IndexBuilder::getWordPositionsFilePath(
-    unsigned long long id,
-    std::string const & word)
-    {
-    ostringstream res;
-    res << _databasePath << '/';
-    for ( size_t i=0, l=min<size_t>(3, word.length())
-         ; i!=l; ++i)
-        {
-        res << word[i] << '/';
-        }
-    res << id << '_' << word << ".txt";
-    return res.str();
-    }
+//std::string
+//IndexBuilder::getWordPositionsFilePath(
+//    docid_t id,
+//    std::string const & word)
+//    {
+//    ostringstream res;
+//    res << _databasePath << '/';
+//    for ( size_t i=0, l=min<size_t>(3, word.length())
+//         ; i!=l; ++i)
+//        {
+//        res << word[i] << '/';
+//        }
+//    res << id << '_' << word << ".txt";
+//    return res.str();
+//    }
 
-size_t fillArrayWithNumbers(
+
+size_t
+fillArrayWithNumber(
     unsigned number,
     char * arr)
     {
     auto i = arr;
-    while (number)
-        {
+    do {
         auto n = static_cast<unsigned char>(number & 127);
         number >>= 7;
         if (number == 0) n |= 128;
         *i++ = n;
-        }
+        } while (number);
+    
+//    // reverse
+//    auto s = arr;
+//    auto e = i - 1;
+//    while (s < e)
+//        swap(*s, *e);
+    
     return i - arr;
     }
 
-void IndexBuilder::writeToDatabase(unsigned long long id)
+// changes the array position
+// so that you can know the size later
+unsigned
+readNumberFromArr(char const * & arr)
+    {
+    unsigned res (0);
+    while ((*arr & 128) == 0)
+        {
+        res |= *arr;
+        res <<= 7;
+        ++arr;
+        }
+    res |= (*arr & 127);
+    return res;
+    }
+
+void
+IndexBuilder::writeToDatabase(docid_t id)
     {
     using namespace boost;
-    ofstream wordsFile (getWordsFilePath(id));
-    ostringstream directory_address;
-
+    char* arr = new char[9];
+    auto_ptr<char> arr_deleter (arr);
+    
+    ofstream wpf (getWordsFilePath(id));
+    ostreambuf_iterator<char> char_out (wpf);
     for (auto w : _words)
         {
-        wordsFile << w->word() << '\n';
-    
-        try
+        if (w->word().length() > 255)
             {
-            ostringstream directory_address;
-            directory_address << _databasePath;
-            for (size_t c=0, l=min<size_t>(3, w->word().length())
-                ; c!=l; ++c)
-                {
-                    directory_address << '/' << w->word()[c];
-                    filesystem::create_directory(directory_address.str());
-                }
+            std::cerr << "some word is longer than 255, "
+                << "so we don't write it" << '\n';
             }
-        catch (filesystem::filesystem_error const & err)
-            {
-            cout << "can't write " << directory_address.str() << '\n';
-            }
-
-            
-        ofstream positionsFile(getWordPositionsFilePath(id, w->word()));
-        char* arr = new char[10];
-        auto_ptr<char> arr_deleter (arr);
+        wpf << static_cast<char>(w->word().length());
+        // what a subtle bug!! << '\n';
+        wpf << w->word() /* << '\n' */;
+        
+        
+        // write the words
         for (unsigned pos: w->positions())
             {
-            size_t end = fillArrayWithNumbers(pos, arr);
-            arr[end]='\0';
-            positionsFile << arr;
+            size_t end = fillArrayWithNumber(pos, arr);
+            while (end --> 0)
+                wpf << arr[end];
             }
+        wpf << static_cast<char>(128);
         }
     }
 
@@ -240,8 +153,11 @@ IndexBuilder::indexFile(std::string filePath)
     _words.clear();
     while (file >> word)
         {
-        auto wordPos = new WordAndPositions(word, ++wordCount);
-        _words.push_back(wordPos);
+        if (std::regex_match(word, std::regex("[a-z]+")))
+            {
+            auto wordPos = new WordAndPositions(word, ++wordCount);
+            _words.push_back(wordPos);
+            }
         }
     size_t new_size = (wordCount > 0)
         ? _dedup->sortDedup(&_words[0], 0, wordCount)
@@ -257,7 +173,10 @@ IndexBuilder::index(string filePaths)
         
     string path;
 
-    unsigned long long ID = 0;
+    docid_t ID = 0;
+    
+    // the in-memory index
+    map<string, vector<docid_t> > wordToID;
     
     unsigned counter(0);
     while (getline(filePathsFile, path))
@@ -268,15 +187,49 @@ IndexBuilder::index(string filePaths)
         
         // write it to database
         // come up with an ID
-        unsigned long long id = ++ID;
-        
+        docid_t id = ++ID;
+        files << id << ' ' << path << '\n';
         writeToDatabase(id);
         
         counter += _words.size();
-        
         for (auto w: _words)
             {
+            // woow
+            // i just spent so much time finding a bug in main
+            // and it turned out to be here
+            // no stacktrace were available.
+            // how to never search for a bug that long again?
+            // shet i donnow
+            
+            // add another id to word --> ids
+            // or, more precisely, distance from positions
+            
+            // we need iterators of wordToId
+            // and indexes to be consistent
+            // you don't store gaps between ids
+            // you only can write your own data structure
+            // that lets you forward iterate on it
+            // which you actually need to write
+            // so write it.
+            
+            wordToID[w->word()].push_back(id);
+
             delete w;
+            }
+            
+        if (counter > 100000)
+            {
+            // merge some indexes
+            // we need to know what indexes we have.
+            // we can find them in a folder
+            
+            // writeIndexToFile(wordToID.begin(), wordToID.end())
+            // we need to come up with filename. It will be 1.index
+            // mergeIfNeeded(); we need merging only if file 1.index exists
+            // so the technology is:
+            
+            wordToID.clear();
+            counter = 0;
             }
         }
     
@@ -284,6 +237,4 @@ IndexBuilder::index(string filePaths)
     std::cout << "end" << '\n';
     std::cout << counter;
     }
-
-
 

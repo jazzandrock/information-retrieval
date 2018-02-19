@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include "defs.h"
 
 
 class WordAndPositions;
@@ -42,24 +43,22 @@ IndexBuilding
          * writes:
          * a file with title: ID_words.txt,
          * words separated by \n
-         *
-         * multiple files named ID_$word.positions
-         * a binary file with positions
-         * located in database/w/o/r/ID_$word.positions
          */
-        void writeToDatabase(unsigned long long id);
+        void writeToDatabase(docid_t id);
         
         private:
         IndexBuilder(IndexBuilder &);
         
-        std::string getWordsFilePath(
-            unsigned long long id);
+        std::string
+        getWordsFilePath(docid_t);
         
-        std::string getWordPositionsFilePath(
-            unsigned long long id,
+        std::string
+        getWordPositionsFilePath(
+            docid_t,
             std::string const & word);
         
-        void createDirectoriesIfNeeded(
+        void
+        createDirectoriesIfNeeded(
             std::string const & word);
         
         Dedup<WordAndPositions*> * _dedup;
