@@ -19,6 +19,7 @@
 #include "IndexBuilder.h"
 #include "Dedup.h"
 #include "WordAndPositions.h"
+#include "ByteArrOutputIterator.h"
 
 using namespace std;
 using namespace IndexBuilding;
@@ -128,19 +129,26 @@ IndexBuilder::writeToDatabase(docid_t id)
             std::cerr << "some word is longer than 255, "
                 << "so we don't write it" << '\n';
             }
-        wpf << static_cast<char>(w->word().length());
+        wpf << static_cast<unsigned char>(w->word().length());
         // what a subtle bug!! << '\n';
         wpf << w->word() /* << '\n' */;
         
-        
+        vector<char> v;
+        v.reserve(100000);
+        char* arr_iter_ = &v[0];
+        ByteArrOutputIterator<char*> num_out (arr_iter_);
         // write the words
         for (unsigned pos: w->positions())
             {
-            size_t end = fillArrayWithNumber(pos, arr);
-            while (end --> 0)
-                wpf << arr[end];
+            *num_out++ = pos;
+//            size_t end = fillArrayWithNumber(pos, arr);
+//            while (end --> 0)
+//                {
+//                wpf << arr[end];
+//                }
             }
-        wpf << static_cast<char>(128);
+        std::copy(&v[0], arr_iter_ + 1, char_out);
+//        wpf << static_cast<char>(128);
         }
     }
 
@@ -153,7 +161,7 @@ IndexBuilder::indexFile(std::string filePath)
     _words.clear();
     while (file >> word)
         {
-        if (std::regex_match(word, std::regex("[a-z]+")))
+        if (std::regex_match(word, std::regex("[a-z]+")) && word.length() < 255)
             {
             auto wordPos = new WordAndPositions(word, ++wordCount);
             _words.push_back(wordPos);

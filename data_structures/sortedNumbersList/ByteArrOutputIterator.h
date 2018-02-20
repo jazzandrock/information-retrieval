@@ -22,31 +22,41 @@ class ByteArrOutputIterator
     typedef num* pointer;
     typedef std::output_iterator_tag iterator_category;
     
-    ByteArrOutputIterator(OutputIterator_t const & arr)
+    ByteArrOutputIterator(OutputIterator_t  & arr)
         : _arr(arr)
         , _n(0)
         {
+        *_arr = 0x80;
         }
     
     ByteArrOutputIterator&
     operator=(num n)
         {
-//        if (n < _n) throw ;
-        num gap = n; // - _n;
+        if (n == 0) throw ;
+        // iterator to _arr buf
+        // so that we can write it
+        // in reverse order later
         
-        char* c = _arr_buf - 1;
-        do {
-            *(++c) = gap & 127;
-            gap >>= 7;
-            } while (gap > 0);
-        *_arr_buf |= static_cast<char>(128);
-        ++c;
-        do {
-            char cc = *(--c);
-            *_arr++ = cc;
-        } while (c != _arr_buf);
-        *_arr = 128;
-        _n = n;
+        char* i = _arr_buf;
+        char c;
+        do  {
+            // take first 7 bytes
+            c = (n & 0x7F);
+            *i = c;
+            ++i;
+            n >>= 7;
+            } while (n > 0);
+        // now i points to the one past end character of our sequence
+
+        _arr_buf[0] |= 0x80;
+        
+        while (i != _arr_buf)
+            {
+            --i;
+            *_arr = *i;
+            ++_arr;
+            }
+        *_arr = 0x80; // terminate the stream
         return *this;
         }
     ByteArrOutputIterator&
@@ -64,11 +74,10 @@ class ByteArrOutputIterator
         {
         return *this;
         }
-    
-    
+        
     private:
     char _arr_buf[9];
-    OutputIterator_t _arr;
+    OutputIterator_t & _arr;
     num _n;
     };
 

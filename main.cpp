@@ -43,29 +43,36 @@ namespace
 using namespace std;
 
 int main(int /*argc*/, const char * /*argv*/[]) {
-//    char arr[256];
-//    char c = 0;
-//    do {arr[static_cast<unsigned char>(c)] = c;} while (++c != 0);
-//    for (char & c: arr)
+//    ByteArrIterator<vector<char>::iterator> a(v.begin());
+//    ByteArrIterator<vector<char>::iterator> e;
+//    while (a != e)
 //        {
-//        c &= 128;
-//        cout << (unsigned int)(unsigned char)c << '\n';
+//        cout << *a << '\n';
+//        ++a;
 //        }
-    char* arr = new char[1000];
-    ByteArrOutputIterator<char*> o(arr);
-    *o++ = 22;
-    *o++ = 1 << 17;
-    *o++ = 129;
-    for (size_t i = 0; i < 30; i++)
-        std::cout << (int)(unsigned char)(arr[i]) << '\n';
-    ByteArrIterator<char*> i (arr);
-    ByteArrIterator<char*> e;
-    while (i != e)
-        {
-        cout << *i << '\n';
-        ++i;
-        }
-    
+//    
+////    char arr[256];
+////    char c = 0;
+////    do {arr[static_cast<unsigned char>(c)] = c;} while (++c != 0);
+////    for (char & c: arr)
+////        {
+////        c &= 128;
+////        cout << (unsigned int)(unsigned char)c << '\n';
+////        }
+//    char* arr = new char[10];
+//    ByteArrOutputIterator<char*> o(arr);
+//    for (unsigned i = 1; i != 200; ++i)
+//        *o++ = i;
+////    for (size_t i = 0; i < 30; i++)
+////        std::cout << (int)(unsigned char)(arr[i]) << '\n';
+//    ByteArrIterator<char*> i (arr);
+//    ByteArrIterator<char*> e;
+//    while (i != e)
+//        {
+//        cout << *i << '\n';
+//        ++i;
+//        }
+//    
 //    ofstream fout("addr");
 //    ostreambuf_iterator<char> i (fout);
 //    *i++ = 'a';
@@ -92,58 +99,65 @@ int main(int /*argc*/, const char * /*argv*/[]) {
 //        v.second.shrink_to_fit();
 //        }
     
-//        IndexBuilding::IndexBuilder b (
+    
+   
+    
+    
+    
+    
+//    IndexBuilding::IndexBuilder b (
 //        "/Users/user/XCodeProjects/IR/db",
 //        "/Users/user/XCodeProjects/IR/db/files_list_processed_with_ids.txt");
 //        
 //    b.index("/Users/user/XCodeProjects/IR/db/_files_list.txt");
+
+    basic_ifstream<char> fin ("/Users/user/XCodeProjects/IR/db/2.wrdps", std::ios::binary);
+    istreambuf_iterator<char> f_iter (fin);
+    istreambuf_iterator<char> f_end;
+    struct WP {
+        char* _str;
+        size_t _strlen;
+        forward_list<unsigned> _l;
+    };
     
-//    basic_ifstream<char> fin ("/Users/user/XCodeProjects/IR/db/1.wrdps", std::ios::binary);
-//    istreambuf_iterator<char> f_iter (fin);
-//    istreambuf_iterator<char> f_end;
-//    struct WP {
-//        char* _str;
-//        size_t _strlen;
-//        forward_list<unsigned> _l;
-//    };
-//    
-//    forward_list<WP> words;
-//    
-//    while (f_iter != f_end)
-//        {
-//        WP w;
-//        w._strlen = static_cast<unsigned char>(*f_iter);
-//        w._str = new char[w._strlen+1];
-//        for ( size_t i=0; i!=w._strlen; ++i )
-//            {
-//            ++f_iter;
-//            char c = static_cast<char>(*f_iter);
-//            w._str[i] = c;
-//            }
-//        ++f_iter;
-//        w._str[w._strlen] = '\0';
-//        ByteArrIterator< istreambuf_iterator<char> > nums (f_iter);
-//        ByteArrIterator< istreambuf_iterator<char> > nums_end;
-//        while (nums != nums_end)
-//            {
-//            w._l.push_front(*nums);
-//            ++nums;
-//            }
-//        ++f_iter;
-//        words.push_front(w);
-//        }
-//    
-//    
-//    for (auto wp: words)
-//        {
-//        cout << wp._str << '\n';
-//        unsigned acc (0);
-//        for (auto pos: wp._l)
-//            {
-//            acc += pos;
-//            cout << acc << '\n';
-//            }
-//        }
+    forward_list<WP> words;
+    
+    while (f_iter != f_end)
+        {
+        WP w;
+        w._strlen = static_cast<unsigned char>(*f_iter);
+        w._str = new char[w._strlen+1];
+        for ( size_t i=0; i!=w._strlen; ++i )
+            {
+            ++f_iter;
+            char c = static_cast<char>(*f_iter);
+            w._str[i] = c;
+            }
+        ++f_iter;
+        w._str[w._strlen] = '\0';
+        ByteArrIterator< istreambuf_iterator<char> > nums (f_iter);
+        ByteArrIterator< istreambuf_iterator<char> > nums_end;
+        while (nums != nums_end)
+            {
+//            cout << *nums << '\n';
+            w._l.push_front(*nums);
+            ++nums;
+            }
+        ++f_iter;
+        words.push_front(w);
+        }
+    
+    
+    for (auto wp: words)
+        {
+        cout << '\n' << wp._str << '\n';
+        unsigned acc (0);
+        for (auto pos: wp._l)
+            {
+            acc = pos;
+            cout << acc << ' ';
+            }
+        }
 
     return 0;
 }

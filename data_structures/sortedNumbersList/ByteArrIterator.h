@@ -37,9 +37,13 @@ class ByteArrIterator
     // default gives the end
     ByteArrIterator()
         {
-        if (std::is_pointer<ForwardIterator_t>::value)
+//        if (std::is_pointer<ForwardIterator_t>::value)
+//            {
+//            _arr = nullptr;
+//            }
+//        else
             {
-            _arr = nullptr;
+            _arr = ForwardIterator_t();
             }
         }
     ByteArrIterator(ByteArrIterator const & other)
@@ -64,33 +68,24 @@ class ByteArrIterator
     ByteArrIterator&
     operator++ ()
         {
-        unsigned char c;
         _n = 0;
-        if ((c = static_cast<unsigned char>(*_arr)) == 128)
+        // if the first char == 128, it's the end of the stream
+        if (static_cast<unsigned char>(*_arr) == 0x80)
             {
-            
-            if (std::is_pointer<ForwardIterator_t>::value)
-                {
-                _arr = ForwardIterator_t();
-                }
-            else
-                {
-                _arr = ForwardIterator_t();
-                }
+            _arr = ForwardIterator_t();
             return *this;
             }
-        while ((c = static_cast<unsigned char>(*_arr)) < 128)
+        
+        // while char < 128
+        while (*_arr & 0x80 ^ 0x80)
             {
+            _n |= *_arr;
             _n <<= 7;
-            _n |= static_cast<unsigned char>(*_arr);
             ++_arr;
             }
-        c = static_cast<unsigned char>(*_arr);
-        if (c != 128) {
-            _n = (_n << 7) + (c & 127);
-            ++_arr;
-            c = static_cast<unsigned char>(*_arr);
-        }
+        _n |= *_arr & 0x7F;
+        ++_arr;
+            
         return *this;
         }
         
