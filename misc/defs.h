@@ -10,10 +10,11 @@
 #define IR_defs_h
 
 typedef unsigned long long docid_t;
+typedef unsigned position_t;
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-TypeName(TypeName&) = delete;              \
-void operator=(TypeName) = delete;
+TypeName(TypeName const&) = delete;              \
+void operator=(TypeName const &) = delete;
 
 #define NOTIFY_COPY_AND_ASSIGN(TypeName) \
 TypeName(TypeName&) { std::cerr << "#TypeName was copied\n"; }              \
