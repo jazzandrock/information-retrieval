@@ -20,6 +20,19 @@ void operator=(TypeName const &) = delete;
 TypeName(TypeName&) { std::cerr << "#TypeName was copied\n"; }              \
 void operator=(TypeName) { std::cerr << "#TypeName was assigned\n"; }
 
+//template <class T>
+//struct equality {
+//    friend bool operator!=(T const & lhs, T const & rhs) { return not (lhs == rhs); }
+//};
+//
+//
+//template <class T>
+//struct comparison {
+//    friend bool operator>(T const & lhs, T const & rhs) { return rhs < lhs; }
+//    friend bool operator<=(T const & lhs, T const & rhs) { return not (lhs > rhs); }
+//    friend bool operator>=(T const & lhs, T const & rhs) { return not (lhs < rhs); }
+//};
+
 struct I {
     I() {}
     I & operator=(I& other) { std::cerr << "i assigned\n"; return *this; }

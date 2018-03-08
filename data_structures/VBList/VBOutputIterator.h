@@ -15,7 +15,7 @@
 // one way: https://stackoverflow.com/questions/4354665/function-that-takes-an-stl-iterator-over-any-container-of-a-elements-of-a-specif
 
 
-// bool terminating:
+// bool terminating template argument:
 // if true, we terminate the stream after each written number
 // (and at the very beginning, in the constructor) and then
 // overwrite the terminating character when writing a new number.
@@ -27,7 +27,7 @@
 // the iterator either supports overwriting or doesn't, so this boolean
 // is a one-time decision, totally ok to hold it in template parameters.
 // looks ugly though.
-template <class OutputIterator_t, class num_t=unsigned, bool terminating=true>
+template <class OutputIterator_t, class num_t, bool terminating>
 class VBOutputIterator
     {
     public:
@@ -38,12 +38,7 @@ class VBOutputIterator
     
     // note that I'm taking &out as a parameter, and _out is & as well
     // this is done so that I can take, for example, ostreambuf_iterator
-    // which is noncopyable. But I don't really like the solution,
-    //
-    //
-    // but now I can't construct VBOutputIterator TODO
-    // by passing reference to sth
-    //
+    // which is noncopyable. But I don't really like the solution
     explicit
     VBOutputIterator(OutputIterator_t & out)
         : _out(out)
@@ -58,11 +53,10 @@ class VBOutputIterator
         if (n == 0) throw std::invalid_argument("we don't store zeros here");
         
         // "you are not expected to understand this"
+        char _arr_buf[sizeof(num_t)*8/7 + 1];
         char* i = _arr_buf;
-        char c;
         do  {
-            c = (n & 0x7F);
-            *i = c;
+            *i = n & 0x7F;
             ++i;
             n >>= 7;
             } while (n > 0);
@@ -127,15 +121,6 @@ class VBOutputIterator
     //
     // so what should I do: restrict or let the user decide?
     DISALLOW_COPY_AND_ASSIGN(VBOutputIterator);
-
-    // I need _arr_buf just in one method, addNumber
-    // I decided to store it in a field so that
-    // I don't create it as a local variable every time
-    // addNumber is called. But later I realized that
-    // the array is static, so it is created on stack,
-    // so it is fast. Should I just declare it as a local
-    // variable in addNumber?
-    char _arr_buf[sizeof(num_t) + sizeof(num_t)/8 + 1]; // maybe that's a little bit too generic))
     
     // this is where the output goes
     OutputIterator_t & _out;

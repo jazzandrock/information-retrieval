@@ -12,10 +12,17 @@
 #include <stdio.h>
 #include <iterator>
 #include <type_traits>
+#include <boost/operators.hpp>
 
-template <class ForwardIterator_t, class num_t=unsigned>
+template <class ForwardIterator_t, class num_t>
+class VBInputConstIterator;
+
+template <class ForwardIterator_t, class num_t>
 class VBInputIterator
+    : public boost::equality_comparable<VBInputIterator<ForwardIterator_t, num_t>&> // wtf why &, w/o doesn't work
+    , public boost::incrementable<VBInputIterator<ForwardIterator_t, num_t>>
     {
+    static_assert(std::is_unsigned<num_t>::value, "num_t must be unsigned integer type");
     public:
     typedef num_t value_type;
     typedef num_t& reference;
@@ -41,12 +48,6 @@ class VBInputIterator
     ~VBInputIterator()
         {
         }
-        
-//    void swap(VBInputIterator& other) noexcept {
-//        using std::swap;
-//        swap(_in, other._in);
-//    }
-        
     VBInputIterator&
     operator++ ()
         {
@@ -76,46 +77,22 @@ class VBInputIterator
         return *this;
         }
         
-    VBInputIterator
-    operator++ (int)
-        {
-        VBInputIterator r (*this);
-        ++*this;
-        return r;
-        }
-
-    // This part is what I would like to hear some suggestions about.
-    //
-    // to allow constructions such as while (iter != end)
-    // I implemented operator==. But how do I construct
-    // end iterator on default constructor, if I'm not
-    // even given the iterator (in default constructor that is)
-    // So I decided to keep a private boolean _end,
-    // and assign it to true when I meet the termination character.
-    // in ==, I just return _end.
-    // this allows some great constructions such as
-    // (iter != iter) that work perfectly fine.
-    //
-    // maybe I should have some static instance of that iterator
-    // denoting the end and return it every time, and then
-    // if I'm comparing with that end iter I just return _end
-    // and if not, I would compare underlying _in iterators or something
     bool
     operator== (VBInputIterator const & other) const
         {
         return _end;
-        }
-        
-    bool
-    operator!= (VBInputIterator const & other) const
-        {
-        return ! (*this == other);
         }
     
     num_t const
     operator* () const
         {
         return _n;
+        }
+
+    bool
+    end() const
+        {
+        return _end;
         }
 
     private:

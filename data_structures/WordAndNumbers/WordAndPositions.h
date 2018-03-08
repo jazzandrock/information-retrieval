@@ -9,6 +9,7 @@
 #ifndef IR_WordAndPositions_h
 #define IR_WordAndPositions_h
 #include "WordNumberBase.h"
+#include "defs.h"
 
 class
 WordAndPositions : public WordNumberBase
@@ -16,42 +17,41 @@ WordAndPositions : public WordNumberBase
     public:
     WordAndPositions(
         std::string const & word,
-        unsigned position)
+        position_t position)
         : WordNumberBase(word, position)
         {
         }
     };
 
-    std::ostream&
-    operator<< (
-        std::ostream & stream,
-        WordAndPositions const & wordPositions)
+std::ostream&
+operator<< (
+    std::ostream & stream,
+    WordAndPositions const & wordPositions)
+    {
+    stream << "WordAndPositions: " << wordPositions.word() << '\n';
+    stream << "positions: ";
+    for (position_t pos: wordPositions.positions())
         {
-        stream << "WordAndPositions: " << wordPositions.word() << '\n';
-        stream << "positions: ";
-        for (unsigned pos: wordPositions.positions())
-            {
-            stream << pos << ' ';
-            }
-        stream << std::endl;
-        return stream;
+        stream << pos << ' ';
         }
+    stream << std::endl;
+    return stream;
+    }
 
-    bool
-    wordAndPositionsLess(
-        WordAndPositions *const & a,
-        WordAndPositions *const & b)
-        {
-        return *a < *b;
-        }
-    
-    bool
-    wordAndPositionsEquals(
-        WordAndPositions *const & a,
-        WordAndPositions *const & b)
-        {
-        return *a == *b;
-        }
+bool
+wordAndPositionsLess(
+    WordAndPositions *const & a,
+    WordAndPositions *const & b)
+    {
+    return *a < *b;
+    }
 
+bool
+wordAndPositionsEquals(
+    WordAndPositions *const & a,
+    WordAndPositions *const & b)
+    {
+    return *a == *b;
+    }
 
 #endif

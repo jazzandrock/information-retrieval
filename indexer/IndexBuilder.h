@@ -21,8 +21,7 @@ template <class T>
 class Dedup;
 
 
-namespace
-IndexBuilding
+namespace IndexBuilding
     {
     class
     IndexBuilder
@@ -44,7 +43,9 @@ IndexBuilding
          * a file with title: ID_words.txt,
          * words separated by \n
          */
-        void writeToDatabase(docid_t id);
+        void saveWordPositionsToFile(
+            docid_t id,
+            std::vector<WordAndPositions*> const & words);
         
         private:
         IndexBuilder(IndexBuilder &);
@@ -63,6 +64,12 @@ IndexBuilding
         
         Dedup<WordAndPositions*> * _dedup;
         std::vector<WordAndPositions*> _words;
+        std::vector<std::string> _indexes;
+        inline std::vector<std::string> & indexes() { return _indexes; }
+        inline bool indexExists(size_t idxidx)
+            {
+            return indexes().size() > idxidx  &&  indexes()[idxidx].length() > 0;
+            }
         std::string _databasePath;
         std::string _indexFilePath;
         };

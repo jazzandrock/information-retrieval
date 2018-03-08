@@ -20,60 +20,44 @@ WordNumberBase
     public:
     WordNumberBase(
         std::string const & word,
-        unsigned position
+        position_t position
         )
         : _word(word)
         , _positions(1, position)
         {
-//        ++freeID;
         }
-    
-    ~WordNumberBase()
-        {
-//        ++deletedNum;
-        }
-    
+    ~WordNumberBase() = default;
     void
     merge(WordNumberBase * const & b)
         {
         _positions.merge(b->_positions);
         delete b;
         }
-    
     std::string const &
     word() const
         {
         return _word;
         }
-
-    std::forward_list<unsigned> const &
+    std::forward_list<position_t> const &
     positions() const
         {
         return _positions;
         }
-        
     bool
     operator< (
         WordNumberBase const & b) const
         {
         return _word.compare(b._word) < 0;
         }
-        
     bool
     operator== (
         WordNumberBase const & b) const
         {
         return _word.compare(b._word) == 0;
         }
-
-//    static size_t createdCount() { return freeID; }
-//    static size_t deletedCount() { return deletedNum; }
-    
     private:
-//    static size_t freeID;
-//    static size_t deletedNum;
     std::string _word;
-    std::forward_list<unsigned> _positions;
+    std::forward_list<position_t> _positions;
     };
 
 #endif /* defined(__IR__WordNumberBase__) */
