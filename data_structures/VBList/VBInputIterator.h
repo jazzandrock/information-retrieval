@@ -36,7 +36,13 @@ class VBInputIterator
         {
         }
     VBInputIterator(VBInputIterator const & other) = default;
-    VBInputIterator & operator=(VBInputIterator &) = default;
+    VBInputIterator & operator=(VBInputIterator const & src)
+        {
+        _n = src._n;
+        _in = src._in;
+        _end = src._end;
+        return *this;
+        }
 
     explicit
     VBInputIterator(ForwardIterator_t const & arr)

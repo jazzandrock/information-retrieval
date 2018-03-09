@@ -151,6 +151,7 @@ void saveWordsToIterator(
             [] (char c) { return static_cast<unsigned char>(c) == 128; });
         *out++ = 128;
         }
+    *out++ = 0; // end of the index is denoted by zero
     }
 void saveWordIdsToFile(
     map<string, VBGapList<docid_t> > const & wordToIdMap,
@@ -164,7 +165,7 @@ void saveWordIdsToFile(
 void
 IndexBuilder::index(string filePaths)
     {
-    size_t const merging_treshold (1000);
+    size_t const merging_treshold (10);
     
     ifstream filePathsFile (filePaths);
     ofstream indexedFiles (_indexFilePath);
@@ -240,11 +241,11 @@ IndexBuilder::index(string filePaths)
             
             {
             using namespace boost::filesystem;
-            current_path(_databasePath);
-            if (exists("_1.worddocs"))
-                {
-                throw std::runtime_error("there must not be _1.worddocs.");
-                }
+//            current_path(_databasePath);
+//            if (exists("_1.worddocs"))
+//                {
+//                throw std::runtime_error("there must not be _1.worddocs.");
+//                }
 
             // by the way, these indexes must be in memory!
             // because how otherwise you will search them?
@@ -257,19 +258,30 @@ IndexBuilder::index(string filePaths)
 
             // write map to file
             // i'll add byte iterator to my lists
-            saveWordIdsToFile(wordToIDMap, _databasePath + "/_1.worddocs");
-            wordToIDMap.clear();
-            first_idx_word_counter = 0;
+//            saveWordIdsToFile(wordToIDMap, _databasePath + "/_1.worddocs");
 
             // construct the first index!!
             string first_index;
-            ostringstream first_index_fill (first_index); // ahaha
-            // q: what is faster: writing rdbuf() or not?
-            // a: no difference
-            ostreambuf_iterator<char> first_index_fill_iter (first_index_fill/*.rdbuf()*/);
-            saveWordsToIterator(wordToIDMap, first_index_fill_iter);
+            auto first_index_out_iter = back_inserter(first_index);
+            saveWordsToIterator(wordToIDMap, first_index_out_iter);
+            wordToIDMap.clear();
+            first_idx_word_counter = 0;
             first_index.shrink_to_fit();
-            IndexIterator<string::iterator, docid_t> i;
+            
+            IndexIterator<string::iterator, docid_t> i(first_index.begin());
+//            IndexIterator<string::iterator, docid_t> end;
+            while (i != i)
+                {
+                auto & p = *i;
+                cout << "aa" << p.first << '\n';
+                auto vb = p.second;
+                while (vb != vb)
+                    {
+                    cout << *vb << '\n';
+                    ++vb;
+                    }
+                ++i;
+                }
             // yeah nigga constructed!!
             // now what. merge?
             // to merge, i first need to compare strings and then
@@ -300,7 +312,7 @@ IndexBuilder::index(string filePaths)
             
             
             // writes it as _1.worddocs
-            for (unsigned i = 0; ; ++i)
+            for (unsigned i = 0; 0; ++i)
                 {
                 if (indexExists(i))
                     {
