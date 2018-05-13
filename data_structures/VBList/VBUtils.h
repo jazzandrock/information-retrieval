@@ -33,7 +33,6 @@ class Utils {
     
     template <class InIter>
     static size_t lengthOfInnerData(InIter innerDataIter) {
-        using namespace misc;
         return copyInnerData(innerDataIter, NullOutputIterator());
     }
 };

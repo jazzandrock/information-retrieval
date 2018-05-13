@@ -16,17 +16,13 @@
 #include "BinarySearch.h"
 #include "streamOutput.h"
 
-namespace {
-    using namespace misc;
-}
-
 class Index {
     public:
     using word_pos_idx_t = size_t;
     using document_freq_t = size_t;
     using score_t = double;
     
-    score_t cosineSimilarity(misc::docid_t d1, docid_t d2) const;
+    score_t cosineSimilarity(docid_t d1, docid_t d2) const;
     
 
     Index(std::string dbp): _databasePath(dbp) {}
@@ -39,7 +35,7 @@ class Index {
                                         std::vector<word_pos_idx_t>& positions,
                                         std::vector<document_freq_t>& documentFrequencies);
     
-    inline std::string documentWordPositionsPath(misc::docid_t doc) const {
+    inline std::string documentWordPositionsPath(docid_t doc) const {
         return _databasePath + "/pos/" + std::to_string(doc) + ".wrdps";
     }
     

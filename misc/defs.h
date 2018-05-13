@@ -16,8 +16,6 @@
 #include <string>
 #include "streamOutput.h"
 
-namespace misc {
-
 #ifndef IR_defs_h
 #define IR_defs_h
 
@@ -47,6 +45,6 @@ struct DocWithRelevance {
 using SearchResults = std::vector<DocWithRelevance>;
 using StringIndexIterator = IndexIterator<std::string::const_iterator, docid_t>;
 
-}
+
 
 #endif

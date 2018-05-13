@@ -10,7 +10,7 @@
 #define IR_BinarySearch_h
 #include <cassert>
 #include <limits>
-namespace misc {
+
 template <class RAIter, class ComparingFunction>
 int binarySearch(RAIter start, RAIter end, ComparingFunction comparator) {
     if ((end - start - 1) > std::numeric_limits<int>::max())
@@ -31,6 +31,6 @@ int binarySearch(RAIter start, RAIter end, ComparingFunction comparator) {
     
     return -1;
 }
-}
+
 
 #endif

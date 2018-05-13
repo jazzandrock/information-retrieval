@@ -9,7 +9,6 @@
 #ifndef IR_NullOutputIterator_h
 #define IR_NullOutputIterator_h
 
-namespace misc {
 
 struct NullOutputIterator: std::iterator<std::output_iterator_tag, NullOutputIterator> {
     /* no-op assignment */
@@ -20,6 +19,6 @@ struct NullOutputIterator: std::iterator<std::output_iterator_tag, NullOutputIte
     NullOutputIterator& operator*() { return *this; }
 };
 
-}
+
 
 #endif

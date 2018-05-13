@@ -9,7 +9,7 @@
 #ifndef IR_streamOutput_h
 #define IR_streamOutput_h
 
-namespace misc {
+
 template<class OStream, class T>
 OStream& operator<< (OStream& os, std::vector<T> const& vec) {
     os << "[vector out start]\n";
@@ -17,6 +17,6 @@ OStream& operator<< (OStream& os, std::vector<T> const& vec) {
         os << e << '\t';
     return os << "[vector out end]\n";;
 }
-}
+
 
 #endif

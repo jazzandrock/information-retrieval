@@ -13,47 +13,43 @@
 #include "Index.h"
 #include "NullOutputIterator.h"
 #include "IndexMerging.h"
+#include "set_merge.h"
 #include <cmath>
 
-using namespace misc;
 
 Index::score_t Index::cosineSimilarity(docid_t d1, docid_t d2) const {
     using namespace std;
     string d1wrdps = copyFileIntoString(documentWordPositionsPath(d1));
     string d2wrdps = copyFileIntoString(documentWordPositionsPath(d2));
-    IndexIterator<string::const_iterator, docid_t> d1iter (d1wrdps.begin());
-    IndexIterator<string::const_iterator, docid_t> d2iter (d2wrdps.begin());
-    IndexIterator<string::const_iterator, docid_t> end;
+    using Iter = IndexIterator<string::const_iterator, docid_t>;
+    Iter d1iter (d1wrdps.begin());
+    Iter d2iter (d2wrdps.begin());
+    Iter end;
     
     static auto const square = [] (double x) { return x*x; };
     
     score_t res (0);
     double a_length (0);
     double b_length (0);
-    using Item = IndexIterator<string::const_iterator, docid_t>::value_type const &;
-//    struct IntersectionHandler: NullOutputIterator {
-//        IntersectionHandler& operator*() { cout << "operator*\n"; return *this; }
-//        void operator=(Item const& a) {
-//            cout << "operator*\n";
-//        }
-//    };
-    set_intersection(d1iter, end, d2iter, end, NullOutputIterator(), [&] (Item a, Item b) {
-        if (a.first == b.first) {
-            string const& word = a.first; // for my convenience
-            // we found words that are the same!
-            auto atf = distance(a.second, decltype(a.second)());
-            auto btf = distance(b.second, decltype(b.second)());
-            auto df = documentFrequency(word);
-            auto idf = log(double(collectionSize())/df);
-            auto a_curr_coord = atf*idf;
-            auto b_curr_coord = btf*idf;
-            a_length += square(a_curr_coord);
-            b_length += square(b_curr_coord);
-            res += a_curr_coord*b_curr_coord;
-        }
-        return a.first < b.first;
-    });
     
+    using Item = Iter::value_type const &;
+    auto compareIters = [] (Item a, Item b) { return a.first < b.first; };
+    auto mergeIters = [&] (Item a, Item b) {
+        assert(a.first == b.first);
+        string const& word = a.first; // for my convenience
+                                      // we found words that are the same!
+        auto atf = distance(a.second, decltype(a.second)());
+        auto btf = distance(b.second, decltype(b.second)());
+        auto df = documentFrequency(word);
+        auto idf = log(static_cast<double>(collectionSize())/df);
+        auto a_curr_coord = atf*idf;
+        auto b_curr_coord = btf*idf;
+        a_length += square(a_curr_coord);
+        b_length += square(b_curr_coord);
+        res += a_curr_coord*b_curr_coord;
+        return a; // whatever
+    };
+    set_merge(d1iter, end, d2iter, end, NullOutputIterator(), compareIters, mergeIters);
     res = sqrt(res);
     res /= sqrt(a_length)*sqrt(b_length);
     
@@ -68,7 +64,7 @@ int Index::indexOfWordInPositions(size_t indexes_idx, std::string word) const {
     [&] (int i) {
         try {
             auto res = getWordFromIndex(index, i);
-            cout << res.size() << "[res_start]" << res << "[res_end]\n";
+//            cout << res.size() << "[res_start]" << res << "[res_end]\n";
             return res.compare(word);
         } catch (...) {
             cout << "positions:\n" << positions << '\n'

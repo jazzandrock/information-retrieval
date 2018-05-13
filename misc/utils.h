@@ -14,8 +14,8 @@
 #include <fstream>
 #include <vector>
 
-namespace misc {
+
 std::string copyFileIntoString(std::string const& filePath);
 std::string charVectorToBinaryString(std::vector<char> const& chv);
-}
+
 #endif /* defined(__IR__utils__) */

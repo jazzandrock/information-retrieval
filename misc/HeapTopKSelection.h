@@ -14,8 +14,7 @@
 #include <queue>
 #include <cassert>
 
-namespace misc {
-    
+
 template <class T, class InputIterator, class Comp>
 std::vector<T> selectTopK(InputIterator start, InputIterator end, size_t K, Comp cmp) {
     using namespace std;
@@ -40,6 +39,5 @@ std::vector<T> selectTopK(InputIterator start, InputIterator end, size_t K, Comp
 }
 
 
-}
 
 #endif

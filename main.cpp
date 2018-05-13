@@ -417,8 +417,8 @@ int main(int /*argc*/, const char * /*argv*/[]) {
             cout << "doc: " << p.doc_ << ", score: " << p.relevance_ << '\n';
         }
         
-//        cout << "cosine similarity:\n";
-//        cout << builder.getIndex()->cosineSimilarity(2, 3);
+        cout << "cosine similarity:\n";
+        cout << builder.getIndex()->cosineSimilarity(2, 3);
     }
 //    basic_ifstream<char> fin ("/Users/user/XCodeProjects/IR/db/2.wrdps", std::ios::binary);
 //    istreambuf_iterator<char> f_iter (fin);
