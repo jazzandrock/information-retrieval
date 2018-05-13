@@ -47,6 +47,12 @@ class VBOutputIterator
         if (terminating) terminate();
         }
     
+    VBOutputIterator& operator=(VBOutputIterator const & other)
+        {
+        _out = other._out;
+        return *this;
+        }
+    
     VBOutputIterator&
     operator=(num_t n)
         {
@@ -77,35 +83,18 @@ class VBOutputIterator
         return *this;
         }
         
-    // my stream of bytes is terminated by 0x80 character
-    // , it's like null-terminated string
-    inline
-    void
-    terminate()
-        {
-        *_out = 0x80;
-        }
+    // my stream of bytes is terminated by 0x80 character,
+    // it's like null-terminated string
+    inline void terminate() { *_out = 0x80; }
         
     // these are no-op, as they are in ostreambuf_iterator
     // hey, and how can make them a no-op?
     // I don't know how long the next number would be,
     // so I can't reserve space for them, so I can't
     // increment iterator without writing a number.
-    VBOutputIterator&
-    operator*()
-        {
-        return *this;
-        }
-    VBOutputIterator&
-    operator++()
-        {
-        return *this;
-        }
-    VBOutputIterator&
-    operator++(int)
-        {
-        return *this;
-        }
+    VBOutputIterator& operator*() { return *this; }
+    VBOutputIterator& operator++() { return *this; }
+    VBOutputIterator& operator++(int) { return *this; }
         
     private:
     // most such restrictions are due to
@@ -120,7 +109,7 @@ class VBOutputIterator
     // just his problem.
     //
     // so what should I do: restrict or let the user decide?
-    DISALLOW_COPY_AND_ASSIGN(VBOutputIterator);
+//    DISALLOW_COPY_AND_ASSIGN(VBOutputIterator);
     
     // this is where the output goes
     OutputIterator_t & _out;

@@ -6,6 +6,18 @@
 //  Copyright (c) 2018 Oleg. All rights reserved.
 //
 
+#include <vector>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
+#include <map>
+#include "IndexIterator.h"
+#include "VBGapList.h"
+#include <string>
+#include "streamOutput.h"
+
+namespace misc {
+
 #ifndef IR_defs_h
 #define IR_defs_h
 
@@ -13,31 +25,28 @@ typedef unsigned long long docid_t;
 typedef unsigned position_t;
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-TypeName(TypeName const&) = delete;              \
+TypeName(TypeName const&) = delete;        \
 void operator=(TypeName const &) = delete;
 
-#define NOTIFY_COPY_AND_ASSIGN(TypeName) \
-TypeName(TypeName&) { std::cerr << "#TypeName was copied\n"; }              \
-void operator=(TypeName) { std::cerr << "#TypeName was assigned\n"; }
+using WordToIDsMap = std::map<std::string, VBGapList<docid_t>>;
+using StringIndexIterator = IndexIterator<std::string::const_iterator, docid_t>;
 
-//template <class T>
-//struct equality {
-//    friend bool operator!=(T const & lhs, T const & rhs) { return not (lhs == rhs); }
-//};
-//
-//
-//template <class T>
-//struct comparison {
-//    friend bool operator>(T const & lhs, T const & rhs) { return rhs < lhs; }
-//    friend bool operator<=(T const & lhs, T const & rhs) { return not (lhs > rhs); }
-//    friend bool operator>=(T const & lhs, T const & rhs) { return not (lhs < rhs); }
-//};
+template <class T1, class T2>
+using VectorsPair = std::pair<std::vector<T1>, std::vector<T2>>;
 
-struct I {
-    I() {}
-    I & operator=(I& other) { std::cerr << "i assigned\n"; return *this; }
-    I(I & other) { std::cerr << "i copied\n"; }
-    ~I() { std::cerr << "i deleted\n"; }
+//using QueryWithWeights = VectorsPair<std::string, double>;
+struct WordWithWeight {
+    std::string word_;
+    double weight_;
 };
+using QueryWithWeights = std::vector<WordWithWeight>;
+struct DocWithRelevance {
+    docid_t doc_;
+    double relevance_;
+};
+using SearchResults = std::vector<DocWithRelevance>;
+using StringIndexIterator = IndexIterator<std::string::const_iterator, docid_t>;
+
+}
 
 #endif

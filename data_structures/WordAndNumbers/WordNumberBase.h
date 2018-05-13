@@ -13,6 +13,7 @@
 #include <iostream>
 #include <string>
 #include <forward_list>
+#include "defs.h"
 
 class
 WordNumberBase
@@ -20,41 +21,25 @@ WordNumberBase
     public:
     WordNumberBase(
         std::string const & word,
-        position_t position
-        )
-        : _word(word)
-        , _positions(1, position)
-        {
-        }
+        position_t position);
+        
     ~WordNumberBase() = default;
+    
     void
-    merge(WordNumberBase * const & b)
-        {
-        _positions.merge(b->_positions);
-        delete b;
-        }
+    merge(WordNumberBase * const & b);
     std::string const &
-    word() const
-        {
-        return _word;
-        }
+    word() const;
+    
     std::forward_list<position_t> const &
-    positions() const
-        {
-        return _positions;
-        }
+    positions() const;
+    
     bool
     operator< (
-        WordNumberBase const & b) const
-        {
-        return _word.compare(b._word) < 0;
-        }
+        WordNumberBase const & b) const;
     bool
     operator== (
-        WordNumberBase const & b) const
-        {
-        return _word.compare(b._word) == 0;
-        }
+        WordNumberBase const & b) const;
+        
     private:
     std::string _word;
     std::forward_list<position_t> _positions;

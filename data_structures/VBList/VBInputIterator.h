@@ -24,6 +24,7 @@ class VBInputIterator
     {
     static_assert(std::is_unsigned<num_t>::value, "num_t must be unsigned integer type");
     public:
+    typedef size_t difference_type;
     typedef num_t value_type;
     typedef num_t& reference;
     typedef num_t* pointer;
@@ -65,18 +66,11 @@ class VBInputIterator
             return *this;
             }
         
-        // while char < 128
-        
-        // lol
-        // you can choose any variant
-        // or even leave both))
-        while ((*_in & 0x80) != 0x80)
-        while (*_in & 0x80 ^ 0x80)
-            {
+        while ((*_in & 0x80) != 0x80) {
             _n |= *_in;
             _n <<= 7;
             ++_in;
-            }
+        }
         _n |= *_in & 0x7F;
         ++_in;
             

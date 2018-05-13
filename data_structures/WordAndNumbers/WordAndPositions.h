@@ -12,46 +12,13 @@
 #include "defs.h"
 
 class
-WordAndPositions : public WordNumberBase
-    {
+WordAndPositions: public WordNumberBase {
     public:
-    WordAndPositions(
-        std::string const & word,
-        position_t position)
-        : WordNumberBase(word, position)
-        {
-        }
-    };
+    WordAndPositions(std::string const & word, position_t position);
+};
 
-std::ostream&
-operator<< (
-    std::ostream & stream,
-    WordAndPositions const & wordPositions)
-    {
-    stream << "WordAndPositions: " << wordPositions.word() << '\n';
-    stream << "positions: ";
-    for (position_t pos: wordPositions.positions())
-        {
-        stream << pos << ' ';
-        }
-    stream << std::endl;
-    return stream;
-    }
-
-bool
-wordAndPositionsLess(
-    WordAndPositions *const & a,
-    WordAndPositions *const & b)
-    {
-    return *a < *b;
-    }
-
-bool
-wordAndPositionsEquals(
-    WordAndPositions *const & a,
-    WordAndPositions *const & b)
-    {
-    return *a == *b;
-    }
+std::ostream& operator<< (std::ostream & stream, WordAndPositions const & wordPositions);
+bool wordAndPositionsLess(WordAndPositions *const & a, WordAndPositions *const & b);
+bool wordAndPositionsEquals(WordAndPositions *const & a, WordAndPositions *const & b);
 
 #endif

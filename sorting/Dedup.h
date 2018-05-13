@@ -93,8 +93,7 @@ class Dedup
         dest[destIdx++] = lessEquals(src1[src1Idx], src2[src2Idx]) ? src1[src1Idx++] : src2[src2Idx++];
 
         T less;
-        while (src1Idx != end1 || src2Idx != end2)
-            {
+        while (src1Idx != end1 || src2Idx != end2) {
             if (src1Idx < end1 && src2Idx < end2)
                 {
                 // < instead of <=

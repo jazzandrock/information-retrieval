@@ -8,41 +8,168 @@
 
 #include <iostream>
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/cxx11/copy_if.hpp>
+#include <boost/operators.hpp>
 #include <cassert>
 #include <string>
 #include <map>
 #include <forward_list>
 #include "defs.h"
 #include "sorting/Dedup.h"
-#include "data_structures/linked_list/linked_list.h"
 #include "indexer/IndexBuilder.h"
 #include "VBInputIterator.h"
 #include "VBOutputIterator.h"
 #include "VBList.h"
 #include "VBGapList.h"
 #include "VBGapInputIterator.h"
-#include <boost/algorithm/cxx11/copy_if.hpp>
-#include <boost/operators.hpp>
+#include "TestingFunctions.h"
+#include "IndexMerging.h"
+#include "utils.h"
+#include <chrono>
+#include "RangedQuery.h"
+#include <queue>
+#include <array>
 
-
-struct S : public boost::equality_comparable<S>, public boost::less_than_comparable<S> {
-    S(int i) : i_(i) {}
-    bool operator==(S const & o) const {return i_ == o.i_; }
-    bool operator<(S const & o) const {return i_ < o.i_; }
-    int i_;
-};
-
-//template <class ForwardIterator_t, class num_t>
-//class Classss
-//    : public boost::equality_comparable<Classss<ForwardIterator_t, num_t>&>
-////    , public boost::incrementable<Classss<ForwardIterator_t, num_t>>
-//    {
-//    public:
-//    bool operator==(Classss const & o) { return true; }
-//    };
+//struct S {
+//    S(): i_(1) {}
+//    int i_;
+//    int& i() { return i_;}
+//    ~S() { std::cout << "katrin destroyer\n"; }
+//};
 
 int main(int /*argc*/, const char * /*argv*/[]) {
     using namespace std;
+    
+//    {
+//        vector<int> v1 {1, 6, 8, 10, 12, 13};
+//        vector<int> v2 {1, 8, 9, 10, 11, 13};
+//        vector<int> res;
+//        struct Handler: NullOutputIterator {
+//            Handler& operator*() { return *this; }
+//            void operator=(int i) {
+//                cout << "handled " << i << '\n';
+//            }
+//        };
+//        set_intersection(v1.begin(), v1.end(), v2.begin(), v2.end(), Handler(), [] (int a, int b) {
+//            if (a == b) cout << a << '\n';
+//            return a < b;
+//        });
+//        cout << res << '\n';
+//        return 0;
+//    }
+    
+//    {
+//        vector<int> v { 2, 5, 1, 5, 3, 2, 4, 2 };
+//        cout << selectTopK<int>(v.begin(), v.end(), 2, std::greater<int>());
+////        priority_queue<int, array<int, 3>> q;
+////        q.push(5);
+////        q.push(3);
+////        q.push(8);
+////        q.push(10);
+////        q.push(1);
+////        vector<int> vec_heap;
+////        vec_heap.resize(10);
+////        cout << vec_heap << '\n';
+////        vec_heap.pop_back();
+////        vec_heap.push_back(5);
+////        push_heap(vec_heap.begin(), vec_heap.end());
+////        cout << vec_heap << '\n';
+////
+////        for (int i = 0; i != 3; ++i) {
+////            cout << q.top() << ' ';
+////            q.pop();
+////        }
+//        
+//        
+//        return 0;
+//    }
+
+//    {
+//        int& i = S().i();
+//        cout << i;
+//        cout << "end\n";
+//        return 0;
+//    }
+//    {
+//        S s = S();
+//        int& i = s.i();
+//        cout << i;
+//        cout << "end\n";
+//        return 0;
+//    }
+//    {
+//        vector<string> words { "aba", "asa", "asda", "bb", "ccc", "kma", "ol" };
+////        sort(words.begin(), words.end());
+////        copy(words.begin(), words.end(), (ostream_iterator<string>(cout, "\n")));
+//        vector<int> v{0, 1, 2, 3, 4, 5, 6};
+////        string find = "asda";
+//        vector<int> foundIndexes;
+//        for (string find: words) {
+//            int curr_idx = 0;
+//            curr_idx = binarySearch(v.begin(), v.end(), [&] (int i) {
+//                return words[i].compare(find);
+//            });
+//            foundIndexes.push_back(curr_idx);
+//        }
+//        
+//        cout << foundIndexes << endl;
+//        return 0;
+//    }
+//    {
+//        string idx = mapIndex2StringIndex(readIndexFromFile("/Volumes/160Gb/do/db/idx/0.index"));
+//        string::const_iterator it = idx.begin();
+//        IndexIterator<decltype(it)&, docid_t> iter(it);
+////        ++iter;
+//        cout << (it - idx.begin()) << endl;
+//        
+//        
+//        return 0;
+//    }
+    
+    // we need our documents in vector space    
+    
+//    {
+//        vector<char> out_v;
+//        auto out = back_inserter(out_v);
+//        vector<char> in { 1, -128, 1, 127, -128 };
+//        auto innerDataIter = in.begin();
+//        while (*innerDataIter != -128) {
+//            while ((*innerDataIter >> 7) == 0) {
+//                *out++ = *innerDataIter;
+//                ++innerDataIter;
+//            }
+//            *out++ = *innerDataIter;
+//            ++innerDataIter;
+//        }
+//        *out++ = *innerDataIter;
+//        cout << charVectorToBinaryString(out_v);
+//
+//        return 0;
+//    }
+//    writeReadableIndexToFile(readIndexFromFile("mergeIndexes_err_1_idx1_str"), "mergeIndexes_err_1_idx1_str.txt");
+//    auto idx = readIndex("mergeIndexes_err_1_idx2_str");
+//    writeReadableIndex(idx, "mergeIndexes_err_2_idx1_str.txt");
+//    
+//    return 0;
+//
+//    vector<int> v1 {1, 2};
+//    vector<int> v2 {1, 3};
+//    vector<int> dest;
+//    set_union(v1.begin(), v1.end(), v2.begin(), v2.end(), back_inserter(dest));
+//    cout << dest;
+//    return 0;
+
+//    vector<int> v1 {1, 3, 6, 9, 9, 10};
+//    vector<int> v2 {1, 3, 6, 9, 9, 10};
+//    vector<int> dest;
+//    vector<int>::const_iterator v1i = v1.begin();
+//    vector<int>::const_iterator v1e = v1.end();
+//    vector<int>::const_iterator v2i = v2.begin();
+//    vector<int>::const_iterator v2e = v2.end();
+//    back_insert_iterator<vector<int>> desti (dest);
+//    Merger<vector<int>::const_iterator, back_insert_iterator<vector<int>>, int>
+//        merger (lesss<int>, equals<int>, ifEquals);
+//    merger.merge(v1i, v1e, v2i, v2e, desti);
 //    S s1(2);
 //    S s2(5);
 //    cout << (s1 < s2) << '\n';
@@ -238,12 +365,61 @@ int main(int /*argc*/, const char * /*argv*/[]) {
 //        v.second.shrink_to_fit();
 //        }
 //    
-    IndexBuilding::IndexBuilder b (
-        "/Users/user/XCodeProjects/IR/db",
-        "/Users/user/XCodeProjects/IR/db/files_list_processed_with_ids.txt");
-        
-    b.index("/Users/user/XCodeProjects/IR/db/_files_list.txt");
+//    IndexBuilding::IndexBuilder (
+//        "/Users/user/XCodeProjects/IR/db",
+//        "/Users/user/XCodeProjects/IR/db/files_list_processed_with_ids.txt",
+//        "")
+//    .index("/Users/user/XCodeProjects/IR/db/_files_list.txt");
 
+//    {
+//        using namespace IndexBuilding;
+//        string const prefix = "/Volumes/160GB/do/4_tr/information_retrieval/gutenberg/";
+////        string const dbpath = prefix + "/long_db";
+////        string const dbpath = prefix + "/short_db";
+////        string const dbpath = prefix + "/3600_db";
+//        string const dbpath = prefix + "/3270_bug_finding";
+//        IndexBuilder builder(
+//            dbpath,
+//            dbpath + "/files_list_processed_with_ids.txt",
+//            prefix);
+//        builder.index(dbpath + "/list");
+////        return 0;
+//    }
+ 
+    {
+        using namespace chrono;
+        using t_t = milliseconds;
+        t_t start = duration_cast<t_t>(system_clock::now().time_since_epoch());
+        IndexBuilding::IndexBuilder builder(
+            "/Volumes/160GB/do/db",
+            "/Volumes/160GB/do/wiki/files_list_processed_with_ids.txt",
+            "/Volumes/160GB/do/wiki/");
+//        .index("/Volumes/160GB/do/wiki/medium_list.txt");
+        builder.index("/Volumes/160GB/do/wiki/short_list.txt");
+//        builder.loadIndex();
+//        builder.index("/Volumes/160GB/do/wiki/long_list.txt");
+        t_t end = duration_cast<t_t>(system_clock::now().time_since_epoch());
+        cout << "\n\ntime: ";
+        ofstream("duration.txt") << (end - start).count() << endl << endl;
+        
+        // TODO: this probably should be returned from builder.method
+        RangedQuerySearcher searcher(builder.getIndex());
+        QueryWithWeights q {
+            {"Олежка", 100.0},
+            {"be", 2.0},
+            {"умовними", 1.0},
+            {"argument", 2.0}
+        };
+//        auto ans = searcher.query(q);
+        auto ans = searcher.queryBM(q);
+        cout << "size: " << ans.size() << '\n';
+        for (auto p : ans) {
+            cout << "doc: " << p.doc_ << ", score: " << p.relevance_ << '\n';
+        }
+        
+//        cout << "cosine similarity:\n";
+//        cout << builder.getIndex()->cosineSimilarity(2, 3);
+    }
 //    basic_ifstream<char> fin ("/Users/user/XCodeProjects/IR/db/2.wrdps", std::ios::binary);
 //    istreambuf_iterator<char> f_iter (fin);
 //    istreambuf_iterator<char> f_end;
@@ -291,6 +467,7 @@ int main(int /*argc*/, const char * /*argv*/[]) {
 //            cout << acc << ' ';
 //            }
 //        }
+//    assert(testIndexMerging());
 
     return 0;
 }

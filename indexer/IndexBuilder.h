@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include "Index.h"
 #include "defs.h"
 
 
@@ -21,58 +22,73 @@ template <class T>
 class Dedup;
 
 
-namespace IndexBuilding
-    {
-    class
-    IndexBuilder
-        {
-        public:
-        IndexBuilder(
-            std::string const & databasePath,
-            std::string const & indexFilePath);
-        ~IndexBuilder();
+namespace IndexBuilding {
+class IndexBuilder {
+public:
+    IndexBuilder(
+        std::string const & databasePath,
+        std::string const & indexFilePath,
+        std::string const base);
         
-        void
-        index(std::string filePaths);
-        
-        void
-        indexFile(std::string filePath);
-        
-        /**
-         * writes:
-         * a file with title: ID_words.txt,
-         * words separated by \n
-         */
-        void saveWordPositionsToFile(
-            docid_t id,
-            std::vector<WordAndPositions*> const & words);
-        
-        private:
-        IndexBuilder(IndexBuilder &);
-        
-        std::string
-        getWordsFilePath(docid_t);
-        
-        std::string
-        getWordPositionsFilePath(
-            docid_t,
-            std::string const & word);
-        
-        void
-        createDirectoriesIfNeeded(
-            std::string const & word);
-        
-        Dedup<WordAndPositions*> * _dedup;
-        std::vector<WordAndPositions*> _words;
-        std::vector<std::string> _indexes;
-        inline std::vector<std::string> & indexes() { return _indexes; }
-        inline bool indexExists(size_t idxidx)
-            {
-            return indexes().size() > idxidx  &&  indexes()[idxidx].length() > 0;
-            }
-        std::string _databasePath;
-        std::string _indexFilePath;
-        };
-    }
+    ~IndexBuilder();
+    
+    void
+    index(std::string filePaths);
+    
+    void loadIndex();
+    
+    void
+    indexFile(std::string const& filePath);
+    
+    /**
+     * writes:
+     * a file with title: ID_words.txt,
+     * words separated by \n
+     */
+    void saveWordPositionsToFile(
+        docid_t id,
+        std::vector<WordAndPositions*> const & words);
+
+    
+    inline Index const * getIndex() { return _index; }
+private:
+    IndexBuilder(IndexBuilder &);
+    
+    std::string
+    getWordsFilePath(docid_t);
+    
+    std::string
+    getWordPositionsFilePath(
+        docid_t,
+        std::string const& word);
+    
+    void
+    createDirectoriesIfNeeded(
+        std::string const& word);
+    
+    // fields
+    Dedup<WordAndPositions*> * _dedup;
+    std::vector<WordAndPositions*> _words;
+//    std::vector<std::string> _indexes;
+    Index * _index;
+    std::string _databasePath;
+    std::string _indexFilePath;
+    std::string _base;
+    
+//    inline std::vector<std::string> & indexes() { return _indexes; }
+//    inline bool indexExists(size_t idxidx)
+//        {
+//        return indexes().size() > idxidx  &&  indexes()[idxidx].length() > 0;
+//        }
+//    inline void addIndex(std::string & idx, size_t idxidx)
+//        {
+//        indexes().reserve(idxidx + 1);
+//        if (indexes().size() < (idxidx + 1))
+//            indexes().resize(idxidx + 1);
+//        indexes()[idxidx] = std::move(idx);
+//        }
+//    void addNewIndexAndMerge(std::string const& first_index);
+    };
+}
 
 #endif /* defined(__IR__IndexBuilder__) */

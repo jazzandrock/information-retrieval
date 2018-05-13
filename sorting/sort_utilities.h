@@ -48,12 +48,9 @@ bool setsEqual(const obj* arr, const obj* sortedArr, const unsigned len, bool (*
 
 template<class obj>
 inline void printArr(const obj* arr, const obj* arrEnd) {
-    assert(arr <= arrEnd);
-    while (arr != arrEnd) {
-        std::cout << *arr << ' ';
-        ++arr;
-    }
-    std::cout << '\n';
+    using namespace std;
+    copy(arr, arrEnd, (ostream_iterator<obj>(cout, " ")));
+    cout << '\n';
 }
 
 #endif //SORTING_SORT_UTILITIES_H
