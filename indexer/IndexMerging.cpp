@@ -28,18 +28,18 @@ void saveWordsFromIteratorToIterator(
 
 
 template <class OutputIterator>
-void saveWordsToIterator(WordToIDsMap const & wordToIdMap, OutputIterator & out) {
+void saveWordsToIterator(WordToIDsMap const& wordToIdMap, OutputIterator & out) {
     auto s = wordToIdMap.begin(), e = wordToIdMap.end();
     saveWordsFromIteratorToIterator(s, e, out);
 }
 
-void saveWordIdsToFile(WordToIDsMap const & wordToIdMap, std::string const & filePath) {
+void saveWordIdsToFile(WordToIDsMap const& wordToIdMap, std::string const& filePath) {
     std::ofstream file_ofstream(filePath);
     std::ostreambuf_iterator<char> file_charout (file_ofstream);
     saveWordsToIterator(wordToIdMap, file_charout);
 }
 
-void mergeExistingIDsWithNew(VBGapInputIterator<std::vector<char>::iterator, docid_t> iter, vector<docid_t>& existing) {
+void mergeExistingIDsWithNew(VBGapInputIterator<std::vector<char>::iterator, docid_t> iter, vector<docid_t> & existing) {
     vector<docid_t> dest;
     dest.reserve(existing.capacity()); // microoptimization
     // turns out std::merge doesn't delete duplicates
@@ -50,8 +50,8 @@ void mergeExistingIDsWithNew(VBGapInputIterator<std::vector<char>::iterator, doc
     existing = move(dest);
 }
 
-void writePairToStringIndex(pair<string, vector<docid_t>>& current_least, back_insert_iterator<string>& dest) {
-    dest = current_least.first.length();
+void writePairToStringIndex(pair<string, vector<docid_t>> & current_least, back_insert_iterator<string> & dest) {
+    *dest = current_least.first.length();
     copy(current_least.first.begin(), current_least.first.end(), dest);
     VBGapList<docid_t> l;
     copy(current_least.second.begin(), current_least.second.end(), back_inserter(l));
@@ -101,7 +101,7 @@ void mergeIndexes(
         // I used to assign to less_iter, thinking that I just
         // change to what object reference points,
         // but in reality I was assigning to the object
-        // calling operator=, that wast tough.
+        // calling operator=, that was tough.
 //        IndexIterator<string::const_iterator, docid_t> * less_iter_p (0);
 //        try {
 //        less_iter_p = &chooseLeastIter(idx1_iter, idx2_iter);
@@ -178,22 +178,28 @@ readIndexFromCharIterator(CharInputIterator in) {
     CharInputIterator in2 (in);
     map<string, VBGapList<docid_t> > wordToIdMap;
     IndexIterator<CharInputIterator, docid_t> iter (in);
+#ifndef NDEBUG
     map<string, vector<docid_t>> insertHistory;
     try {
+#endif
         while (not iter.end()) {
             string word = iter.operator*().first;
             // ???: operator*
             // (*iter).second works, but only with parentheses
             // somehow compiler messes up the operator precedence
             VBGapInputIterator<vector<char>::iterator, docid_t> numbersIn = iter->second;
-            while (numbersIn != numbersIn) {
+            VBGapInputIterator<vector<char>::iterator, docid_t> end;
+            while (numbersIn != end) {
                 docid_t num = *numbersIn;
+#ifndef NDEBUG
                 insertHistory[word].push_back(num);
+#endif
                 wordToIdMap[word].push_back(num);
                 ++numbersIn;
             }
             ++iter;
         }
+#ifndef NDEBUG
     } catch(...) {
         {
             ofstream of("insertHistory.txt");
@@ -214,22 +220,33 @@ readIndexFromCharIterator(CharInputIterator in) {
         
         throw ;
     }
+#endif
     return move(wordToIdMap);
 }
 
 WordToIDsMap idxStr2idxMap(std::string const& idx) {
+#define I HATE C++
+#undef I
+    
+#ifndef NDEBUG
     try {
+#endif
         auto i = idx.c_str();
+#ifndef NDEBUG
         { ofstream("c_str") << i; }
         { ofstream ("idx.begin()") << *idx.begin(); }
         { ofstream ("string_that_was_passed_to_idxStr2IdxPam") << idx; }
+#endif
         return readIndexFromCharIterator(i);
+#ifndef NDEBUG
     } catch (...) {
         { ofstream ("idx.begin()_after_throw") << *idx.begin(); }
         { ofstream ("string_that_was_passed_to_idxStr2IdxPam_after_throw") << idx; }
         throw ;
     }
+#endif
 }
+
 WordToIDsMap readIndexFromFile(std::string const& filename) {
     using namespace std;
     string idx = copyFileIntoString(filename);
@@ -242,23 +259,23 @@ std::string getMergedIndex(std::string const& idx1_str, std::string const& idx2_
     if (idx1_str.size() == 0) return idx2_str;
     if (idx2_str.size() == 0) return idx1_str;
     
-    {
-        static unsigned n = 1;
-        ofstream("merging" + to_string(n) + "first.txt") << idxStr2ReadableIdxStr(idx1_str);
-        ofstream("merging" + to_string(n) + "second.txt") << idxStr2ReadableIdxStr(idx2_str);
-        ++n;
-    }
+//    {
+//        static unsigned n = 1;
+//        ofstream("merging" + to_string(n) + "first.txt") << idxStr2ReadableIdxStr(idx1_str);
+//        ofstream("merging" + to_string(n) + "second.txt") << idxStr2ReadableIdxStr(idx2_str);
+//        ++n;
+//    }
     
     string res;
     mergeIndexes(idx1_str, idx2_str, back_inserter(res));
     assert(res.size() > min(idx1_str.size(), idx2_str.size()));
     
-    {
-        static unsigned n = 1;
-        ofstream("merged" + to_string(n) + ".txt") << idxStr2ReadableIdxStr(res);
-        ++n;
-    }
-    return std::move(res);
+//    {
+//        static unsigned n = 1;
+//        ofstream("merged" + to_string(n) + ".txt") << idxStr2ReadableIdxStr(res);
+//        ++n;
+//    }
+    return move(res);
 }
 //std::string getMergedIndex(std::string const& idx1_str, std::string const& idx2_str) {
 //    std::string res;

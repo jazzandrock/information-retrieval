@@ -9,6 +9,7 @@
 #ifndef IR_RangedQuery_h
 #define IR_RangedQuery_h
 #include <string>
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include <cassert>
@@ -19,6 +20,7 @@
 #include "IndexMerging.h"
 #include "HeapTopKSelection.h"
 #include "BM25.h"
+#include "defs.h"
 
 class RangedQuerySearcher {
     public:
@@ -26,12 +28,41 @@ class RangedQuerySearcher {
 
     size_t getDocumentLength(docid_t d) {
         using namespace std;
-        auto wordPositions = readIndexFromFile("/Volumes/160GB/do/db/pos/" + to_string(d) + ".wrdps");
+        auto wordPositions = readIndexFromFile(index_->documentWordPositionsPath(d));
         return accumulate(
             wordPositions.begin(), wordPositions.end(), 0,
             [] (size_t acc, decltype(wordPositions)::const_reference p) {
                 return acc + p.second.size();
             });
+    }
+    
+    void printResult(SearchResults& ans) {
+        using namespace std;
+        cout << "size: " << ans.size() << '\n';
+        sort(ans.begin(), ans.end(), COMPARE_FIELDS_LESS(DocWithRelevance, .doc_));
+        struct DocWithRelevanceWithPath {
+            DocWithRelevance dr_;
+            string path_;
+        };
+        vector<DocWithRelevanceWithPath> res;
+        {
+            // TODO: hardcoded path
+            ifstream lines ("/Volumes/160GB/do/wiki/long_list.txt");
+            string path;
+            
+            docid_t n = 0;
+            for (auto const& p : ans) {
+                while (n != p.doc_ and getline(lines, path)) ++n;
+                if (n == p.doc_) {
+                    res.push_back({p, path});
+                }
+            }
+        }
+        sort(res.begin(), res.end(), COMPARE_FIELDS(DocWithRelevanceWithPath, .dr_.relevance_, >));
+        for (auto const& p : res) {
+            cout << "doc: " << p.dr_.doc_ << ", score: " << p.dr_.relevance_ << '\n';
+            cout << "path: " << p.path_ << "\n\n";
+        }
     }
 
     SearchResults queryBM(QueryWithWeights const& q) {
@@ -41,9 +72,11 @@ class RangedQuerySearcher {
         using score_t = double;
         
         auto N = index_->collectionSize();
-        unsigned long long collectionWordNumber (N * 400);
-//        for (docid_t i = 0; i != N / 2; ++i)
+        unsigned long long collectionWordNumber (0);
+        collectionWordNumber = N * 400;
+//        for (docid_t i = 0; i != N; ++i)
 //            collectionWordNumber += getDocumentLength(i);
+        
         BM25::setCollectionSize(N);
         BM25::setAvgDocLen(collectionWordNumber / N);
         auto scoring_fun = BM25(10, 0.5);
@@ -55,6 +88,7 @@ class RangedQuerySearcher {
             
             index_->execForEveryDocId(p.word_,
             [&] (docid_t d) {
+                // TODO: reading from hardcoded path
                 auto wordPositions = readIndexFromFile("/Volumes/160GB/do/db/pos/" + to_string(d) + ".wrdps");
                 size_t document_length = accumulate(
                     wordPositions.begin(), wordPositions.end(), 0,
@@ -128,6 +162,7 @@ class RangedQuerySearcher {
                 return lhs.relevance_ > rhs.relevance_;
             }));
     }
+    
     
     private:
     Index const * index_;

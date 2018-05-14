@@ -17,7 +17,7 @@ WordAndPositions: public WordNumberBase {
     WordAndPositions(std::string const & word, position_t position);
 };
 
-std::ostream& operator<< (std::ostream & stream, WordAndPositions const & wordPositions);
+std::ostream & operator<< (std::ostream & stream, WordAndPositions const & wordPositions);
 bool wordAndPositionsLess(WordAndPositions *const & a, WordAndPositions *const & b);
 bool wordAndPositionsEquals(WordAndPositions *const & a, WordAndPositions *const & b);
 

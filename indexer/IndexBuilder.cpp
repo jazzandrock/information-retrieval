@@ -33,8 +33,8 @@ using namespace std;
 using namespace IndexBuilding;
 
 IndexBuilder::IndexBuilder(
-                           std::string const & databasePath,
-                           std::string const & indexFilePath,
+                           std::string const databasePath,
+                           std::string const indexFilePath,
                            std::string const base
                            )
 : _dedup(
@@ -103,17 +103,20 @@ void
 IndexBuilder::indexFile(std::string const& filePath) {
     using namespace std;
     using namespace std::regex_constants;
-    static auto const regexpr = regex("[А-Яа-яa-z]+", ECMAScript|icase);
+    static auto const regexpr = regex("[А-ЯІЇЄа-яіїєa-z]+", ECMAScript|icase);
     ifstream file (_base + filePath);
     unsigned wordCount (0);
     string word;
     _words.clear();
+    cout << _databasePath + "/debug.txt" << '\n';
+    ofstream deb(_databasePath + "/debug.txt");
+    assert(regex_match("колекція", regexpr));
     while (file >> word) {
+        deb << word << '\n';
 //        all_words << word << '\n';
         transform(word.begin(), word.end(), word.begin(), ::tolower);
-        if (word == "Олежка") {
-            cout << "їїїїЄ";
-        }
+        if (word == "колекція")
+            assert(regex_match(word, regexpr));
         if (/* DISABLES CODE */ (false) or (word.length() < 255  and  regex_match(word, regexpr))) {
 //            all_words_captured << word << '\n';
             auto wordPos = new WordAndPositions(word, ++wordCount);
@@ -122,6 +125,7 @@ IndexBuilder::indexFile(std::string const& filePath) {
     }
     size_t new_size = (wordCount > 0) ? _dedup->sortDedup(&_words[0], 0, wordCount) : 0;
     _words.resize(new_size);
+    
 }
 
 void IndexBuilder::loadIndex() {
@@ -129,7 +133,7 @@ void IndexBuilder::loadIndex() {
 }
 
 void
-IndexBuilder::index(string filePaths) {
+IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLineToProcess) {
     size_t const merging_treshold (100000);
     
     ifstream filePathsFile (filePaths);
@@ -137,15 +141,20 @@ IndexBuilder::index(string filePaths) {
     
     string path;
     
-    docid_t ID = 0;
+    docid_t ID = firstLineToProcess;
     
     // the in-memory index
     map<string, VBGapList<docid_t> > wordToIDMap;
     
-//    static int n (0);
     size_t first_idx_word_counter(0);
-    while (getline(filePathsFile, path)) {
+    size_t numberOfLinesProcessed = 0;
+
+    for (; numberOfLinesProcessed != firstLineToProcess; ++numberOfLinesProcessed)
+        getline(filePathsFile, path);
+    
+    while (numberOfLinesProcessed <= lastLineToProcess and getline(filePathsFile, path)) {
         cout << path << '\n';
+        ++numberOfLinesProcessed;
         // fill _words with words/positions
         indexFile(path);
         
@@ -156,23 +165,19 @@ IndexBuilder::index(string filePaths) {
         saveWordPositionsToFile(id, _words);
         
         first_idx_word_counter += _words.size();
-        for (auto w: _words) {
+        for (WordAndPositions * w: _words) {
             wordToIDMap[w->word()].push_back(id);
             delete w;
         }
         if (first_idx_word_counter > merging_treshold) {
             string first_index = mapIndex2StringIndex(wordToIDMap);
+#ifndef NDEBUG
             if (not indexValid(first_index, wordToIDMap)) {
                 { ofstream("idxThatCausedException") << first_index; }
                 writeReadableIndexToFile(wordToIDMap, "mapThatCausedException.txt");
                 mapIndex2StringIndex(wordToIDMap);
             }
-            
-//            string indexFileName = "idx" + to_string(++n);
-//            { ofstream(indexFileName) << first_index; }
-//            writeReadableIndex(wordToIDMap, "readable" + indexFileName);
-//            auto map2 = readIndex(indexFileName);
-//            writeReadableIndex(map2, "readable" + indexFileName + "second");
+#endif
             wordToIDMap.clear();
             first_idx_word_counter = 0;
             _index->addStringIndex(move(first_index));
@@ -182,66 +187,41 @@ IndexBuilder::index(string filePaths) {
     {
         // add the last index
         string first_index = mapIndex2StringIndex(wordToIDMap);
+#ifndef NDEBUG
         if (not indexValid(first_index, wordToIDMap)) {
             { ofstream("idxThatCausedException") << first_index; }
             writeReadableIndexToFile(wordToIDMap, "mapThatCausedException.txt");
             mapIndex2StringIndex(wordToIDMap);
         }
-        
-//            string indexFileName = "idx" + to_string(++n);
-//            { ofstream(indexFileName) << first_index; }
-//            writeReadableIndex(wordToIDMap, "readable" + indexFileName);
-//            auto map2 = readIndex(indexFileName);
-//            writeReadableIndex(map2, "readable" + indexFileName + "second");
+#endif
         wordToIDMap.clear();
         first_idx_word_counter = 0;
         _index->addStringIndex(move(first_index));
+        ofstream(_databasePath + "/lastLine.txt") << numberOfLinesProcessed;
     }
-//    n = 13;
-//    string idx = copyFileIntoString("idx1");
-//    for (int i = 2; i <= n; ++i) {
-//        string currIdx = copyFileIntoString("idx" + to_string(i));
-//        cout << "currIdx len: " << currIdx.size() << '\n';
-//        cout << "merging\n";
-//        string idxCopy = idx;
-//        idx = getMergedIndex(idxCopy, currIdx);
-//        { ofstream("mergedIdx" + to_string(i)) << idx; }
-//    }
-//    
-//    auto finalIdxMap = readIndex("mergedIdx13");
-//    writeReadableIndex(finalIdxMap, "readableMergedIdx13");
-//    for_each(indexes().begin(), indexes().end(), []
 
+//    _index->saveIndexes();
+//    _index->saveReadableIndexes();
+//    cout << "almost end\n";
 //    {
-//        string out;
-//        size_t n = 0;
-//        for (string const & idx : indexes()) {
-//            if (idx.size() == 0) continue;
-//            out = getMergedIndex(idx, out);
-//            string indexPath = _databasePath + "/idx/" + to_string(n) + ".index";
-//            { ofstream (indexPath) << idx; }
-//             writeReadableIndexToFile(readIndexFromFile(indexPath), _databasePath + "/idx/" + to_string(n) + ".readableindex");
-//            
-//            ++n;
-//        }
-//        { ofstream (_databasePath + "/idx/mergedIndex.index") << out; }
-//         writeReadableIndexToFile(readIndexFromFile(_databasePath + "/idx/mergedIndex.index"), _databasePath + "/idx/mergedIndex.readableindex");
+//        string search_word = "argument";
+//        _index->execForEveryDocId(search_word, [&] (docid_t d) {
+//            cout << "df __in that particular index" << to_string(_index->indexInArray()) << ", unftntly__ for " << search_word << ": "
+//                << _index->documentFrequencies()[_index->indexInArray()][_index->indexOfWordInPositionsAndFrequenciesVectors()] << '\n';
+//            cout << d << ' ';
+//        });
 //    }
-    _index->saveIndexes();
-    cout << "almost end\n";
-    {
-        string search_word = "argument";
-        _index->execForEveryDocId(search_word, [&] (docid_t d) {
-            cout << "df __in that particular index" << to_string(_index->indexInArray()) << ", unftntly__ for " << search_word << ": "
-                << _index->documentFrequencies()[_index->indexInArray()][_index->indexOfWordInPositionsAndFrequenciesVectors()] << '\n';
-            cout << d << ' ';
-    //        cout << "їїїї for latin characters\n";
-    //        cout << "їїїї для наших букв\n";
-        });
-    }
     cout << "end" << '\n';
     cout << first_idx_word_counter;
 }
 
+bool IndexBuilder::indexMoreLines(std::string file, size_t numberOfLinesToIndex) {
+    size_t indexedLinesNum;
+    ifstream(_databasePath + "/lastLine.txt") >> indexedLinesNum;
+    index(file, indexedLinesNum, indexedLinesNum + numberOfLinesToIndex);
+    
+    return false; // TODO: it must return whether
+    // the file with lines is exhausted
+}
 
 // always write custom typedefs instead of integers

@@ -15,7 +15,7 @@
 #include "IndexMerging.h"
 #include "set_merge.h"
 #include <cmath>
-
+#include <boost/filesystem.hpp>
 
 Index::score_t Index::cosineSimilarity(docid_t d1, docid_t d2) const {
     using namespace std;
@@ -61,18 +61,18 @@ int Index::indexOfWordInPositions(size_t indexes_idx, std::string word) const {
     string const& index = indexes_[indexes_idx];
     auto const& positions = positions_[indexes_idx];
     return binarySearch(positions.begin(), positions.end(),
-    [&] (int i) {
-        try {
+    [&] (position_t i) {
+//        try {
             auto res = getWordFromIndex(index, i);
 //            cout << res.size() << "[res_start]" << res << "[res_end]\n";
             return res.compare(word);
-        } catch (...) {
-            cout << "positions:\n" << positions << '\n'
-                << "positions_size: " << positions.size() << '\n'
-                << "position index: " << i << '\n'
-                << "position at that index: " << positions[i] << '\n';
-            throw ;
-        }
+//        } catch (...) {
+//            cout << "positions:\n" << positions << '\n'
+//                << "positions_size: " << positions.size() << '\n'
+//                << "position index: " << i << '\n'
+//                << "position at that index: " << positions[i] << '\n';
+//            throw ;
+//        }
     });
 }
 
@@ -141,37 +141,28 @@ void Index::getWordPositionsInIndexString(
 
 void Index::addStringIndex(std::string first_index) {
     using namespace std;
-    string idx = first_index;
-    cout << "length of first_idx:" << idx.size() << '\n';
-    for (auto i: indexes()) cout << i.size() << '\t';
-    cout << '\n';
+    string idx = move(first_index);
+    if (idx.size() == 0) return;
     for (size_t i = 0; ; ++i) {
         if (indexExists(i)) {
-            // merge _i, i to _i+1.worddocss
-            cout << "length of indexes()[i]: " << indexes_[i].size() << '\n';
-            idx = getMergedIndex(idx, indexes_[i]);
-            indexes_[i].clear();
-            positions_[i].clear();
-            cout << "length after merging:" << idx.size() << '\n';
-            if (idx.size() < 10) cout << idx << '\n';
+            idx = getMergedIndex(idx, indexes(i));
+            boost::filesystem::remove(indexPathByIndex(i));
         } else {
             cout << "length on adding:" << idx.size() << '\n';
-            
-            addIndex(move(idx), i);
+            ofstream(indexPathByIndex(i)) << idx;
             break;
         }
     }
 }
 
 
-void Index::saveIndexes() const {
+void Index::saveReadableIndexes() const {
     using namespace std;
-    for (unsigned n = 0; n != indexes_.size(); ++n) {
-        string const& idx = indexes_[n];
-        if (idx.size() > 0) {
-            string indexPath = _databasePath + "/idx/" + to_string(n) + ".index";
-            ofstream(indexPath) << idx;
-            ofstream(indexPath + "_readable.txt") << idxStr2ReadableIdxStr(idx);
+    static const size_t MAX_NUMBER_OF_INDEXES = 64;
+    for (unsigned n = 0; n != MAX_NUMBER_OF_INDEXES; ++n) {
+        string indexPath = _databasePath + "/idx/" + to_string(n) + ".index";
+        if (/* file exitst */ ifstream(indexPath)) {
+            writeReadableIndexToFile(readIndexFromFile(indexPath), indexPath + "_readable.txt");
         }
     }
 }
@@ -189,6 +180,8 @@ void Index::loadIndexes() {
 }
 
 void Index::addIndex(std::string&& idx, size_t idxidx) {
+    using namespace std;
+
     if (indexes_.size() < (idxidx + 1))
         indexes_.resize(idxidx + 1);
     
@@ -197,8 +190,7 @@ void Index::addIndex(std::string&& idx, size_t idxidx) {
     
     if (documentFrequencies_.size() < (idxidx + 1))
         documentFrequencies_.resize(idxidx + 1);
-    
-    
-    indexes_[idxidx] = std::move(idx);
+
+    indexes_[idxidx] = move(idx);
     getWordPositionsInIndexString(indexes_[idxidx], positions_[idxidx], documentFrequencies_[idxidx]);
 }

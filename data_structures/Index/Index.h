@@ -35,9 +35,7 @@ class Index {
                                         std::vector<word_pos_idx_t>& positions,
                                         std::vector<document_freq_t>& documentFrequencies);
     
-    inline std::string documentWordPositionsPath(docid_t doc) const {
-        return _databasePath + "/pos/" + std::to_string(doc) + ".wrdps";
-    }
+    inline std::string documentWordPositionsPath(docid_t doc) const { return _databasePath + "/pos/" + std::to_string(doc) + ".wrdps"; }
     
     template <class UnaryFunction>
     void execForEveryDocId( std::string word, UnaryFunction f) const;
@@ -45,31 +43,32 @@ class Index {
     static std::string getWordFromIndex(std::string const& index, word_pos_idx_t wordIdx);
     
     void loadIndexes();
-    void saveIndexes() const;
+    void saveReadableIndexes() const;
     
     inline std::vector<std::string> const&                  indexes                                     () const { return indexes_; };
     inline std::vector<std::vector<word_pos_idx_t>> const&  positions                                   () const { return positions_; };
     inline std::vector<std::vector<document_freq_t>> const& documentFrequencies                         () const { return documentFrequencies_; };
     inline size_t                                           indexInArray                                () const { return indexInArray_; }
     inline size_t                                           indexOfWordInPositionsAndFrequenciesVectors () const { return indexOfWordInPositionsAndFrequenciesVectors_; }
+//    inline std::string databasePath() { return _databasePath; }
 private:
     template <class UnaryFunction>
     void execForEveryDocIdInIndex(std::string word, UnaryFunction f) const;
 
     int indexOfWordInPositions(size_t indexes_idx, std::string word) const;
     
-    std::string const _databasePath; // = "/Volumes/160GB/do/db/";
+    std::string const _databasePath;
     std::vector<std::string> indexes_;
     std::vector<std::vector<word_pos_idx_t>> positions_;
     std::vector<std::vector<document_freq_t>> documentFrequencies_;
     mutable size_t indexInArray_;
     mutable size_t indexOfWordInPositionsAndFrequenciesVectors_;
     
-    inline bool indexExists(size_t idxidx) {
-        return indexes_.size() > idxidx  &&  indexes_[idxidx].length() > 0;
-    }
+    inline bool indexExists(size_t idxidx) { return static_cast<bool>(std::ifstream(indexPathByIndex(idxidx))); }
     void addIndex(std::string&& idx, size_t idxidx);
     void addNewIndexAndMerge(std::string const& first_index);
+    inline std::string indexPathByIndex(size_t n) const { return _databasePath + "/idx/" + std::to_string(n) + ".index"; }
+    std::string indexes(size_t i) { return copyFileIntoString(indexPathByIndex(i)); }
 };
 
 
@@ -106,7 +105,6 @@ void Index::execForEveryDocIdInIndex(std::string word, UnaryFunction f) const {
             // because StringIndexIterator will be immediately destroyed,
             // p will be a dangling reference!!!
             // auto& p = *StringIndexIterator(index.begin() + found_idx);
-            
             auto innerDataStart = index.begin() + positions[indexOfWordInPositionsAndFrequenciesVectors_]; // point to length of the word
             innerDataStart += static_cast<unsigned char>(*innerDataStart) + 1; // point to the start of inner data
             VBGapInputIterator<decltype(innerDataStart), docid_t> docIdsStart (innerDataStart);

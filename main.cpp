@@ -29,6 +29,7 @@
 #include "RangedQuery.h"
 #include <queue>
 #include <array>
+#include <clocale>
 
 //struct S {
 //    S(): i_(1) {}
@@ -39,22 +40,18 @@
 
 int main(int /*argc*/, const char * /*argv*/[]) {
     using namespace std;
+//    {
+//        vector<int> v { 0, 1, 2, 3, 4, 5, 6, 7 };
+//        cout << selectTopK<int>(v.begin(), v.end(), 3, std::less<int>());
+//        return 0;
+//    }
     
 //    {
-//        vector<int> v1 {1, 6, 8, 10, 12, 13};
-//        vector<int> v2 {1, 8, 9, 10, 11, 13};
-//        vector<int> res;
-//        struct Handler: NullOutputIterator {
-//            Handler& operator*() { return *this; }
-//            void operator=(int i) {
-//                cout << "handled " << i << '\n';
-//            }
-//        };
-//        set_intersection(v1.begin(), v1.end(), v2.begin(), v2.end(), Handler(), [] (int a, int b) {
-//            if (a == b) cout << a << '\n';
-//            return a < b;
+//        vector<int> v { 0, 1, 2, 3, 4, 5, 6, 7 };
+//        cout << binarySearch(v.begin(), v.end(), [] (int n) {
+//            return n - (-1);
 //        });
-//        cout << res << '\n';
+//        
 //        return 0;
 //    }
     
@@ -394,31 +391,36 @@ int main(int /*argc*/, const char * /*argv*/[]) {
             "/Volumes/160GB/do/db",
             "/Volumes/160GB/do/wiki/files_list_processed_with_ids.txt",
             "/Volumes/160GB/do/wiki/");
-//        .index("/Volumes/160GB/do/wiki/medium_list.txt");
-        builder.index("/Volumes/160GB/do/wiki/short_list.txt");
-//        builder.loadIndex();
-//        builder.index("/Volumes/160GB/do/wiki/long_list.txt");
-        t_t end = duration_cast<t_t>(system_clock::now().time_since_epoch());
-        cout << "\n\ntime: ";
-        ofstream("duration.txt") << (end - start).count() << endl << endl;
-        
+//        builder.indexMoreLines("/Volumes/160GB/do/wiki/long_list.txt", 1000000);
+//        builder.index("/Volumes/160GB/do/wiki/long_list.txt", 261600, 261788);
+//        t_t end = duration_cast<t_t>(system_clock::now().time_since_epoch());
+//        cout << "\n\ntime: ";
+//        ofstream("/Volumes/160GB/do/db/duration.txt") << (end - start).count() << endl << endl;
+        // total time to index wikipedia: 4401 seconds
+
+//        cout << "starting loading\n";
+        builder.loadIndex();
+        Index const * index = builder.getIndex();
+        cout << "loaded\n";
+//        index->saveReadableIndexes();
         // TODO: this probably should be returned from builder.method
-        RangedQuerySearcher searcher(builder.getIndex());
+        RangedQuerySearcher searcher(index);
         QueryWithWeights q {
             {"Олежка", 100.0},
             {"be", 2.0},
             {"умовними", 1.0},
             {"argument", 2.0}
         };
+        QueryWithWeights q2 {
+            {"колекція", 0.316227766},
+//            {"гутенберга", 0.948683298},
+        };
 //        auto ans = searcher.query(q);
-        auto ans = searcher.queryBM(q);
-        cout << "size: " << ans.size() << '\n';
-        for (auto p : ans) {
-            cout << "doc: " << p.doc_ << ", score: " << p.relevance_ << '\n';
-        }
+        auto ans = searcher.queryBM(q2);
+        searcher.printResult(ans);
         
-        cout << "cosine similarity:\n";
-        cout << builder.getIndex()->cosineSimilarity(2, 3);
+//        cout << "cosine similarity:\n";
+//        cout << builder.getIndex()->cosineSimilarity(2, 3);
     }
 //    basic_ifstream<char> fin ("/Users/user/XCodeProjects/IR/db/2.wrdps", std::ios::binary);
 //    istreambuf_iterator<char> f_iter (fin);

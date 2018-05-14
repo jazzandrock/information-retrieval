@@ -26,6 +26,10 @@ typedef unsigned position_t;
 TypeName(TypeName const&) = delete;        \
 void operator=(TypeName const &) = delete;
 
+#define print(code) std::cout << #code << ":" << code << '\n';
+
+#define COMPARE_FIELDS(type, field, cmp) [] (type a, type b) { return (a field) cmp (b field); }
+#define COMPARE_FIELDS_LESS(type, field) COMPARE_FIELDS(type, field, <)
 using WordToIDsMap = std::map<std::string, VBGapList<docid_t>>;
 using StringIndexIterator = IndexIterator<std::string::const_iterator, docid_t>;
 

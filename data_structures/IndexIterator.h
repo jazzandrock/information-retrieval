@@ -33,7 +33,7 @@ public:
     : data_iter_(data_iter)
 //    , data_(10) // TODO: is there difference betweeen (10) and .reserve(10)?
     , end_(false) // no way
-    // lool
+    // lol
     // I didn't initialize end_, and sometimes happened to be initialized to true (garbage)
     // and that caused exception in mergeIndexes()
     {

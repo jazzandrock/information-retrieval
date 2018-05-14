@@ -12,9 +12,9 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <limits>
 #include "Index.h"
 #include "defs.h"
-
 
 class WordAndPositions;
 
@@ -26,16 +26,18 @@ namespace IndexBuilding {
 class IndexBuilder {
 public:
     IndexBuilder(
-        std::string const & databasePath,
-        std::string const & indexFilePath,
+        std::string const databasePath,
+        std::string const indexFilePath,
         std::string const base);
         
     ~IndexBuilder();
     
     void
-    index(std::string filePaths);
+    index(std::string filePaths, size_t firstLineToProcess=0, size_t lastLineToProcess = std::numeric_limits<size_t>::max());
     
     void loadIndex();
+    
+    bool indexMoreLines(std::string filePaths, size_t numberOfLinesToIndex);
     
     void
     indexFile(std::string const& filePath);
