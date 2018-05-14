@@ -17,6 +17,7 @@
 #include <cmath>
 #include <boost/filesystem.hpp>
 
+
 Index::score_t Index::cosineSimilarity(docid_t d1, docid_t d2) const {
     using namespace std;
     string d1wrdps = copyFileIntoString(documentWordPositionsPath(d1));
@@ -101,12 +102,9 @@ Index::document_freq_t Index::documentFrequency(std::string word) const {
 }
 size_t Index::collectionSize() const {
     using namespace std;
-    return accumulate(
-        documentFrequencies_.begin(), documentFrequencies_.end(),
-        0,
-        [] (size_t acc, vector<document_freq_t> const& frequencies) {
-            return accumulate(frequencies.begin(), frequencies.end(), 0);
-        });
+    size_t ans;
+    ifstream(_databasePath + "/lastLine.txt") >> ans;
+    return ans;
 }
 
 std::string Index::getWordFromIndex(std::string const& index, word_pos_idx_t wordIdx) {
@@ -193,4 +191,19 @@ void Index::addIndex(std::string&& idx, size_t idxidx) {
 
     indexes_[idxidx] = move(idx);
     getWordPositionsInIndexString(indexes_[idxidx], positions_[idxidx], documentFrequencies_[idxidx]);
+}
+
+position_t Index::documentLength(docid_t d) const {
+    // TODO: reading from hardcoded path
+    auto wordPositions = readIndexFromFile(documentWordPositionsPath(d));
+    return accumulate(
+          wordPositions.begin(), wordPositions.end(), 0,
+          [] (size_t acc, decltype(wordPositions)::const_reference p) {
+              return acc + p.second.size();
+          });
+}
+
+size_t Index::termFreq(std::string const& w, docid_t d) const {
+    auto wordPositions = readIndexFromFile(documentWordPositionsPath(d));
+    return wordPositions[w].size();
 }

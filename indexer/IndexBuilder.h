@@ -42,11 +42,6 @@ public:
     void
     indexFile(std::string const& filePath);
     
-    /**
-     * writes:
-     * a file with title: ID_words.txt,
-     * words separated by \n
-     */
     void saveWordPositionsToFile(
         docid_t id,
         std::vector<WordAndPositions*> const & words);

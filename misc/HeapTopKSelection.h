@@ -26,7 +26,7 @@
 template <class T, class InputIterator, class Comp>
 std::vector<T> selectTopK(InputIterator start, InputIterator end, size_t K, Comp cmp) {
     using namespace std;
-    assert(start != end);
+    assert(start <= end);
     
     vector<T> v;
     v.reserve(K + 1);

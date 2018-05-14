@@ -15,7 +15,6 @@
 #include "defs.h"
 #include "BinarySearch.h"
 #include "streamOutput.h"
-
 class Index {
     public:
     using word_pos_idx_t = size_t;
@@ -51,6 +50,8 @@ class Index {
     inline size_t                                           indexInArray                                () const { return indexInArray_; }
     inline size_t                                           indexOfWordInPositionsAndFrequenciesVectors () const { return indexOfWordInPositionsAndFrequenciesVectors_; }
 //    inline std::string databasePath() { return _databasePath; }
+    position_t documentLength(docid_t d) const;
+    size_t termFreq(std::string const& w, docid_t d) const;
 private:
     template <class UnaryFunction>
     void execForEveryDocIdInIndex(std::string word, UnaryFunction f) const;
@@ -97,22 +98,18 @@ void Index::execForEveryDocIdInIndex(std::string word, UnaryFunction f) const {
     using namespace std;
     string const& index = indexes_[indexInArray_];
     vector<word_pos_idx_t> const& positions = positions_[indexInArray_];
-    try {
-        indexOfWordInPositionsAndFrequenciesVectors_ = indexOfWordInPositions(indexInArray_, word);
-        // TODO:
-        if (indexOfWordInPositionsAndFrequenciesVectors_ != -1) {
-            // IT DOESN'T WORK THAT WAY
-            // because StringIndexIterator will be immediately destroyed,
-            // p will be a dangling reference!!!
-            // auto& p = *StringIndexIterator(index.begin() + found_idx);
-            auto innerDataStart = index.begin() + positions[indexOfWordInPositionsAndFrequenciesVectors_]; // point to length of the word
-            innerDataStart += static_cast<unsigned char>(*innerDataStart) + 1; // point to the start of inner data
-            VBGapInputIterator<decltype(innerDataStart), docid_t> docIdsStart (innerDataStart);
-            VBGapInputIterator<decltype(innerDataStart), docid_t> docIdsEnd;
-            for_each(docIdsStart, docIdsEnd, f);
-        }
-    } catch (...) {
-        throw ;
+    indexOfWordInPositionsAndFrequenciesVectors_ = indexOfWordInPositions(indexInArray_, word);
+    // TODO: comparing size_t with -1
+    if (indexOfWordInPositionsAndFrequenciesVectors_ != -1) {
+        // IT DOESN'T WORK THAT WAY
+        // because StringIndexIterator will be immediately destroyed,
+        // p will be a dangling reference!!!
+        // auto& p = *StringIndexIterator(index.begin() + found_idx);
+        auto innerDataStart = index.begin() + positions[indexOfWordInPositionsAndFrequenciesVectors_]; // point to length of the word
+        innerDataStart += static_cast<unsigned char>(*innerDataStart) + 1; // point to the start of inner data
+        VBGapInputIterator<decltype(innerDataStart), docid_t> docIdsStart (innerDataStart);
+        VBGapInputIterator<decltype(innerDataStart), docid_t> docIdsEnd;
+        for_each(docIdsStart, docIdsEnd, f);
     }
 }
 

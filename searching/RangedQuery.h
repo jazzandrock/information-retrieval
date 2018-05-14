@@ -21,9 +21,27 @@
 #include "HeapTopKSelection.h"
 #include "BM25.h"
 #include "defs.h"
+#include <map>
 
 class RangedQuerySearcher {
     public:
+    void search(std::string query) {
+        using namespace std;
+        map<string, double> hist;
+        istringstream buffer(query);
+        string word;
+        while (buffer >> word) {
+            hist[word] += 1.0;
+        }
+        QueryWithWeights q;
+        for (auto const& p: hist)
+            q.push_back({p.first, p.second});
+        
+//        auto ans = searcher.query(q);
+        auto ans = queryBM(q);
+        printResult(ans);
+    }
+    
     RangedQuerySearcher(Index const * index): index_(index) {}
 
     size_t getDocumentLength(docid_t d) {
@@ -39,7 +57,7 @@ class RangedQuerySearcher {
     void printResult(SearchResults& ans) {
         using namespace std;
         cout << "size: " << ans.size() << '\n';
-        sort(ans.begin(), ans.end(), COMPARE_FIELDS_LESS(DocWithRelevance, .doc_));
+        sort(ans.begin(), ans.end(), COMPARE_FIELDS_LESS(DocWithRelevance const&, .doc_));
         struct DocWithRelevanceWithPath {
             DocWithRelevance dr_;
             string path_;
@@ -58,7 +76,7 @@ class RangedQuerySearcher {
                 }
             }
         }
-        sort(res.begin(), res.end(), COMPARE_FIELDS(DocWithRelevanceWithPath, .dr_.relevance_, >));
+        sort(res.begin(), res.end(), COMPARE_FIELDS(DocWithRelevanceWithPath const&, .dr_.relevance_, >));
         for (auto const& p : res) {
             cout << "doc: " << p.dr_.doc_ << ", score: " << p.dr_.relevance_ << '\n';
             cout << "path: " << p.path_ << "\n\n";
@@ -73,9 +91,9 @@ class RangedQuerySearcher {
         
         auto N = index_->collectionSize();
         unsigned long long collectionWordNumber (0);
-        collectionWordNumber = N * 400;
-//        for (docid_t i = 0; i != N; ++i)
-//            collectionWordNumber += getDocumentLength(i);
+//        collectionWordNumber = N * 400;
+        for (docid_t i = 1; i < (N-1); ++i)
+            collectionWordNumber += getDocumentLength(i);
         
         BM25::setCollectionSize(N);
         BM25::setAvgDocLen(collectionWordNumber / N);
@@ -85,23 +103,15 @@ class RangedQuerySearcher {
         for (WordWithWeight p: q) {
             auto df = index_->documentFrequency(p.word_);
             double idf = log(static_cast<double>(N) / df);
-            
             index_->execForEveryDocId(p.word_,
             [&] (docid_t d) {
-                // TODO: reading from hardcoded path
-                auto wordPositions = readIndexFromFile("/Volumes/160GB/do/db/pos/" + to_string(d) + ".wrdps");
-                size_t document_length = accumulate(
-                    wordPositions.begin(), wordPositions.end(), 0,
-                    [] (size_t acc, decltype(wordPositions)::const_reference p) {
-                        return acc + p.second.size();
-                    });
-//                scores[d] += p.weight_ * idf * tf / document_length;
-                size_t tf = wordPositions[p.word_].size();
+                auto document_length = index_->documentLength(d);
+                auto tf = index_->termFreq(p.word_, d);
                 scores[d] += scoring_fun(document_length, df, tf);
             });
         }
 
-        assert(not scores.empty());
+//        assert(not scores.empty());
 
         SearchResults res;
         res.reserve(scores.size());
@@ -110,7 +120,7 @@ class RangedQuerySearcher {
                 return DocWithRelevance {p.first, p.second};
             });
         
-        assert(res.size());
+//        assert(res.size());
 
         return move(selectTopK<DocWithRelevance>(
             res.begin(), res.end(), K,

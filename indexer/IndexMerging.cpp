@@ -135,6 +135,7 @@ void mergeIndexes(
                     << " and " << idx2_rfname << '\n';
 //                writeReadableIndexToFile(readIndexFromFile(idx1_fname), idx1_rfname);
 //                writeReadableIndexToFile(readIndexFromFile(idx2_fname), idx2_rfname);
+                throw ;
             }
             current_least.second.clear();
             fillCurrentLeastFromIter(current_least, less_iter);
@@ -225,9 +226,6 @@ readIndexFromCharIterator(CharInputIterator in) {
 }
 
 WordToIDsMap idxStr2idxMap(std::string const& idx) {
-#define I HATE C++
-#undef I
-    
 #ifndef NDEBUG
     try {
 #endif
@@ -259,53 +257,12 @@ std::string getMergedIndex(std::string const& idx1_str, std::string const& idx2_
     if (idx1_str.size() == 0) return idx2_str;
     if (idx2_str.size() == 0) return idx1_str;
     
-//    {
-//        static unsigned n = 1;
-//        ofstream("merging" + to_string(n) + "first.txt") << idxStr2ReadableIdxStr(idx1_str);
-//        ofstream("merging" + to_string(n) + "second.txt") << idxStr2ReadableIdxStr(idx2_str);
-//        ++n;
-//    }
-    
     string res;
     mergeIndexes(idx1_str, idx2_str, back_inserter(res));
-    assert(res.size() > min(idx1_str.size(), idx2_str.size()));
+    assert(res.size() >= min(idx1_str.size(), idx2_str.size()));
     
-//    {
-//        static unsigned n = 1;
-//        ofstream("merged" + to_string(n) + ".txt") << idxStr2ReadableIdxStr(res);
-//        ++n;
-//    }
     return move(res);
 }
-//std::string getMergedIndex(std::string const& idx1_str, std::string const& idx2_str) {
-//    std::string res;
-//    assert(res.size() == 0);
-//    auto ins = back_inserter(res);
-//    try {
-//        mergeIndexes(idx1_str, idx2_str, ins);
-//    } catch (std::runtime_error const & e) {
-//        static unsigned err_id = 0;
-//        std::cerr << "runtime_error: " << e.what() << '\n';
-////            << idx1_str << '\n'
-////            << idx2_str << '\n';
-//        
-//        ++err_id;
-//        std::string idx1_fname = "err_" + to_string(err_id) + "_idx1_str";
-//        std::string idx2_fname = "err_" + to_string(err_id) + "_idx2_str";
-//        std::cerr << "we'll write indexes to " << idx1_fname << " and "
-//                << idx2_fname << ".";
-//        { ofstream(idx1_fname) << idx1_str; }
-//        { ofstream(idx2_fname) << idx2_str; }
-//        std::string idx1_rfname = "readable_" + idx1_fname + ".txt";
-//        std::string idx2_rfname = "readable_" + idx2_fname + ".txt";
-//        std::cerr << "we will also write readable indexes to " << idx1_rfname
-//            << " and " << idx2_rfname << '\n';
-//        writeReadableIndexToFile(readIndexFromFile(idx1_fname), idx1_rfname);
-//        writeReadableIndexToFile(readIndexFromFile(idx2_fname), idx2_rfname);
-//    }
-//    assert(res.size() > min(idx1_str.size(), idx2_str.size()));
-//    return std::move(res);
-//}
 
 std::string mapIndex2StringIndex(WordToIDsMap const& wordToIDMap) {
     using namespace std;

@@ -17,7 +17,8 @@
 #include <map>
 #include <unordered_map>
 #include <boost/filesystem.hpp>
-#include <boost/algorithm/cxx11/copy_if.hpp>
+#include <boost/algorithm/algorithm.hpp>
+#include <boost/algorithm/string.hpp>
 #include "IndexBuilder.h"
 #include "Dedup.h"
 #include "WordAndPositions.h"
@@ -28,6 +29,8 @@
 #include "IndexMerging.h"
 #include "utils.h"
 #include "TestingFunctions.h"
+#include <boost/locale.hpp>
+
 
 using namespace std;
 using namespace IndexBuilding;
@@ -103,26 +106,35 @@ void
 IndexBuilder::indexFile(std::string const& filePath) {
     using namespace std;
     using namespace std::regex_constants;
-    static auto const regexpr = regex("[А-ЯІЇЄа-яіїєa-z]+", ECMAScript|icase);
+//    static auto const regexpr = regex("[А-ЯІЇЄа-яіїєa-z]+", ECMAScript|icase);
     ifstream file (_base + filePath);
     unsigned wordCount (0);
     string word;
     _words.clear();
-    cout << _databasePath + "/debug.txt" << '\n';
+    
     ofstream deb(_databasePath + "/debug.txt");
-    assert(regex_match("колекція", regexpr));
-    while (file >> word) {
-        deb << word << '\n';
-//        all_words << word << '\n';
-        transform(word.begin(), word.end(), word.begin(), ::tolower);
-        if (word == "колекція")
-            assert(regex_match(word, regexpr));
-        if (/* DISABLES CODE */ (false) or (word.length() < 255  and  regex_match(word, regexpr))) {
-//            all_words_captured << word << '\n';
-            auto wordPos = new WordAndPositions(word, ++wordCount);
-            _words.push_back(wordPos);
+    string line;
+    
+    string regex_part = u8"[\\wа-яїєь]+";
+    string regex_full = regex_part + "'?" + regex_part;
+    regex re(regex_full);
+    while (getline(file, line)) {
+//        line = boost::locale::to_lower(line);
+        boost::algorithm::to_lower(line);
+        sregex_iterator next (line.begin(), line.end(), re);
+        sregex_iterator end;
+        while (next != end) {
+            string word = next->str();
+            if (word.size() < 255) {
+                deb << word << '\n';
+                ++wordCount;
+                auto wordPos = new WordAndPositions(word, ++wordCount);
+                _words.push_back(wordPos);
+            }
+            ++next;
         }
     }
+
     size_t new_size = (wordCount > 0) ? _dedup->sortDedup(&_words[0], 0, wordCount) : 0;
     _words.resize(new_size);
     
@@ -138,7 +150,7 @@ IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLine
     
     ifstream filePathsFile (filePaths);
     ofstream indexedFiles (_indexFilePath);
-    
+    assert(filePathsFile);
     string path;
     
     docid_t ID = firstLineToProcess;
@@ -149,7 +161,7 @@ IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLine
     size_t first_idx_word_counter(0);
     size_t numberOfLinesProcessed = 0;
 
-    for (; numberOfLinesProcessed != firstLineToProcess; ++numberOfLinesProcessed)
+    for ( ; numberOfLinesProcessed != firstLineToProcess; ++numberOfLinesProcessed)
         getline(filePathsFile, path);
     
     while (numberOfLinesProcessed <= lastLineToProcess and getline(filePathsFile, path)) {
@@ -217,7 +229,9 @@ IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLine
 
 bool IndexBuilder::indexMoreLines(std::string file, size_t numberOfLinesToIndex) {
     size_t indexedLinesNum;
-    ifstream(_databasePath + "/lastLine.txt") >> indexedLinesNum;
+    ifstream fin (_databasePath + "/lastLine.txt");
+    assert(fin);
+    fin >> indexedLinesNum;
     index(file, indexedLinesNum, indexedLinesNum + numberOfLinesToIndex);
     
     return false; // TODO: it must return whether
