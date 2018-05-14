@@ -114,7 +114,7 @@ int main(int /*argc*/, const char * /*argv*/[]) {
 
         {
             Timer _ (dbpath + "/duration.txt");
-            builder.indexMoreLines(dbpath + "/list", 100);
+            builder.indexMoreLines(dbpath + "/list", 10000);
         }
         // total time to index wikipedia: 4401 seconds
 

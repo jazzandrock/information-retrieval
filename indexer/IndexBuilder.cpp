@@ -106,28 +106,23 @@ void
 IndexBuilder::indexFile(std::string const& filePath) {
     using namespace std;
     using namespace std::regex_constants;
-//    static auto const regexpr = regex("[А-ЯІЇЄа-яіїєa-z]+", ECMAScript|icase);
     ifstream file (_base + filePath);
     unsigned wordCount (0);
     string word;
     _words.clear();
     
-    ofstream deb(_databasePath + "/debug.txt");
     string line;
     
     string regex_part = u8"[\\wа-яїєь]+";
     string regex_full = regex_part + "'?" + regex_part;
     regex re(regex_full);
     while (getline(file, line)) {
-//        line = boost::locale::to_lower(line);
         boost::algorithm::to_lower(line);
         sregex_iterator next (line.begin(), line.end(), re);
         sregex_iterator end;
         while (next != end) {
             string word = next->str();
             if (word.size() < 255) {
-                deb << word << '\n';
-                ++wordCount;
                 auto wordPos = new WordAndPositions(word, ++wordCount);
                 _words.push_back(wordPos);
             }
