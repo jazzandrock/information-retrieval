@@ -26,7 +26,7 @@
 #include "IndexMerging.h"
 #include "utils.h"
 #include <chrono>
-#include "RangedQuery.h"
+#include "RangedQuerySearcher.h"
 #include <queue>
 #include <array>
 #include <clocale>
@@ -112,14 +112,13 @@ int main(int /*argc*/, const char * /*argv*/[]) {
             dbpath + "/files_list_processed_with_ids.txt",
             prefix + "/wiki uk 2008/");
 
-        {
-            Timer _ (dbpath + "/duration.txt");
-            builder.indexMoreLines(dbpath + "/list", 10000);
-        }
+//        {
+//            Timer _ (dbpath + "/duration.txt");
+//            builder.indexMoreLines(dbpath + "/list", 10000);
+//        }
         // total time to index wikipedia: 4401 seconds
 
         
-        return 0;
         {
             cout << "start loading\n";
             Timer _ ("");
@@ -128,16 +127,16 @@ int main(int /*argc*/, const char * /*argv*/[]) {
         }
         Index const * index = builder.getIndex();
 
-        {
-            cout << "saving indexes:\n";
-            Timer _ ("");
-            index->saveReadableIndexes();
-        }
+//        {
+//            cout << "saving indexes:\n";
+//            Timer _ ("");
+//            index->saveReadableIndexes();
+//        }
         RangedQuerySearcher searcher(index);
 
         {
             Timer _ ("");
-            searcher.search("important world class listening problem");
+            searcher.search("склали список геніїв сучасності одну четверту списку склали британці");
         }
         
 //        cout << "cosine similarity:\n";

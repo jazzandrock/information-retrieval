@@ -78,7 +78,7 @@ private:
 template <class UnaryFunction>
 void Index::execForEveryDocId( std::string word, UnaryFunction f) const {
     using namespace std;
-    cout << "indexes.size(): " << indexes_.size() << '\n';
+    cout << "executing word: " << word << '\n';
     for (indexInArray_ = 0; indexInArray_ != indexes_.size(); ++indexInArray_) {
         string const& idx = indexes_[indexInArray_];
         if (idx.size() > 0) {
