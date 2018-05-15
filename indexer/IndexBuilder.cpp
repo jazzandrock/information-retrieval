@@ -36,10 +36,8 @@ using namespace std;
 using namespace IndexBuilding;
 
 IndexBuilder::IndexBuilder(
-                           std::string const databasePath,
-                           std::string const indexFilePath,
-                           std::string const base
-                           )
+    std::string const& databasePath,
+    std::string const& base)
 : _dedup(
          new Dedup<WordAndPositions*>(
                                       wordAndPositionsEquals,
@@ -52,8 +50,8 @@ IndexBuilder::IndexBuilder(
 , _words(1000000)
 , _index(new Index(databasePath))
 , _databasePath (databasePath)
-, _indexFilePath (indexFilePath)
 , _base(base)
+, _fileList(databasePath + "/list")
 {
 }
 
@@ -135,7 +133,7 @@ IndexBuilder::indexFile(std::string const& filePath) {
 void IndexBuilder::loadIndex() { _index->loadIndexes(); }
 
 void
-IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLineToProcess, long long maxRunningTime) {
+IndexBuilder::index(size_t firstLineToProcess, size_t lastLineToProcess, long long maxRunningTime) {
     size_t const merging_treshold (100000);
     
     // time end = now + duration
@@ -152,8 +150,7 @@ IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLine
     }();
     
     
-    ifstream filePathsFile (filePaths);
-    ofstream indexedFiles (_indexFilePath);
+    ifstream filePathsFile (_fileList);
     assert(filePathsFile);
     string path;
     
@@ -191,7 +188,6 @@ IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLine
         // write it to database
         // come up with an ID
         docid_t id = ++ID;
-        indexedFiles << id << ' ' << path << '\n';
         saveWordPositionsToFile(id, _words);
         
         first_idx_word_counter += _words.size();
@@ -207,28 +203,25 @@ IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLine
         }
     }
     
-    {
-        // add the last index
-        clearMapAndSaveIndex();
-        ofstream(_databasePath + "/lastLine.txt") << numberOfLinesProcessed;
-    }
-
-    cout << "end" << '\n';
-    cout << first_idx_word_counter;
+    // add the last index
+    clearMapAndSaveIndex();
+    ofstream(_databasePath + "/lastLine.txt") << numberOfLinesProcessed;
 }
 
-bool IndexBuilder::indexMoreLines(std::string file, size_t numberOfLinesToIndex, long long seconds) {
+bool IndexBuilder::indexMoreLines(size_t numberOfLinesToIndex, long long seconds) {
     size_t indexedLinesNum;
     ifstream fin (_databasePath + "/lastLine.txt");
     assert(fin);
     fin >> indexedLinesNum;
-    index(file, indexedLinesNum, indexedLinesNum + numberOfLinesToIndex, seconds);
+//    size_t lastLineToIndex = (numberOfLinesToIndex == numeric_limits<size_t>::max()) ?
+    auto lastLineToIndex = max(indexedLinesNum + numberOfLinesToIndex, max(indexedLinesNum, numberOfLinesToIndex));
+    index(indexedLinesNum, lastLineToIndex, seconds);
     
     return false; // TODO: it must return whether
     // the file with lines is exhausted
 }
 
 // always write custom typedefs instead of integers
-bool IndexBuilder::indexForSeconds(std::string filePaths, long long seconds) {
-    return indexMoreLines(filePaths, std::numeric_limits<size_t>::max(), seconds);
+bool IndexBuilder::indexForSeconds(long long seconds) {
+    return indexMoreLines(std::numeric_limits<size_t>::max(), seconds);
 }

@@ -26,38 +26,31 @@ namespace IndexBuilding {
 class IndexBuilder {
 public:
     IndexBuilder(
-        std::string const databasePath,
-        std::string const indexFilePath,
-        std::string const base);
+        std::string const& databasePath,
+        std::string const& base);
         
     ~IndexBuilder();
     
-    void
-    index(
-          std::string filePaths,
-          size_t firstLineToProcess = 0,
-          size_t lastLineToProcess = std::numeric_limits<size_t>::max(),
-          long long maxRunningTime = std::numeric_limits<long long>::max());
-    
     void loadIndex();
     
-    bool indexForSeconds(std::string filePaths, long long seconds);
-    bool indexMoreLines(
-        std::string filePaths,
-        size_t numberOfLinesToIndex,
-        long long seconds = std::numeric_limits<long long>::max());
+    bool indexForSeconds(long long seconds);
+    void indexFile(std::string const& filePath);
     
-    void
-    indexFile(std::string const& filePath);
+    bool indexMoreLines(size_t numberOfLinesToIndex,
+                        long long seconds = std::numeric_limits<long long>::max());
     
     void saveWordPositionsToFile(
         docid_t id,
         std::vector<WordAndPositions*> const & words);
-
     
     inline Index const * getIndex() { return _index; }
 private:
     IndexBuilder(IndexBuilder &);
+    
+    void
+    index(size_t firstLineToProcess = 0,
+          size_t lastLineToProcess = std::numeric_limits<size_t>::max(),
+          long long maxRunningTime = std::numeric_limits<long long>::max());
     
     std::string
     getWordsFilePath(docid_t);
@@ -79,6 +72,7 @@ private:
     std::string _databasePath;
     std::string _indexFilePath;
     std::string _base;
+    std::string _fileList;
     
 //    inline std::vector<std::string> & indexes() { return _indexes; }
 //    inline bool indexExists(size_t idxidx)

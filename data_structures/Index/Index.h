@@ -49,7 +49,7 @@ class Index {
     inline std::vector<std::vector<document_freq_t>> const& documentFrequencies                         () const { return documentFrequencies_; };
     inline size_t                                           indexInArray                                () const { return indexInArray_; }
     inline size_t                                           indexOfWordInPositionsAndFrequenciesVectors () const { return indexOfWordInPositionsAndFrequenciesVectors_; }
-//    inline std::string databasePath() { return _databasePath; }
+    inline std::string databasePath() const { return _databasePath; }
     position_t documentLength(docid_t d) const;
     size_t termFreq(std::string const& w, docid_t d) const;
 private:
@@ -59,6 +59,7 @@ private:
     int indexOfWordInPositions(size_t indexes_idx, std::string word) const;
     
     std::string const _databasePath;
+//    std::string const linesPath_;
     std::vector<std::string> indexes_;
     std::vector<std::vector<word_pos_idx_t>> positions_;
     std::vector<std::vector<document_freq_t>> documentFrequencies_;

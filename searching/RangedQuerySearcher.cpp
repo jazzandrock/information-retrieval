@@ -47,8 +47,9 @@ void RangedQuerySearcher::printResult(SearchResults& ans) {
     };
     vector<DocWithRelevanceWithPath> res;
     {
+    string linesPath_ = index_->databasePath() + "/list";
     // TODO: hardcoded path
-    ifstream lines ("/Volumes/160GB/do/wiki/long_list.txt");
+    ifstream lines (linesPath_);
     string path;
     
     docid_t n = 0;
