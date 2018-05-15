@@ -106,16 +106,14 @@ void
 IndexBuilder::indexFile(std::string const& filePath) {
     using namespace std;
     using namespace std::regex_constants;
+    static const string regex_part = u8"[\\wа-яїєь]+";
+    static const string regex_full = regex_part + "'?" + regex_part;
+    static const regex re(regex_full);
     ifstream file (_base + filePath);
     unsigned wordCount (0);
-    string word;
     _words.clear();
     
     string line;
-    
-    string regex_part = u8"[\\wа-яїєь]+";
-    string regex_full = regex_part + "'?" + regex_part;
-    regex re(regex_full);
     while (getline(file, line)) {
         boost::algorithm::to_lower(line);
         sregex_iterator next (line.begin(), line.end(), re);
@@ -132,16 +130,27 @@ IndexBuilder::indexFile(std::string const& filePath) {
 
     size_t new_size = (wordCount > 0) ? _dedup->sortDedup(&_words[0], 0, wordCount) : 0;
     _words.resize(new_size);
-    
 }
 
-void IndexBuilder::loadIndex() {
-    _index->loadIndexes();
-}
+void IndexBuilder::loadIndex() { _index->loadIndexes(); }
 
 void
-IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLineToProcess) {
+IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLineToProcess, long long maxRunningTime) {
     size_t const merging_treshold (100000);
+    
+    // time end = now + duration
+    // on every iteration check if now < end
+    // and break if not
+    // but how represent date and time?
+    auto secondsRunning = [] () {
+        using namespace chrono;
+        const seconds start = duration_cast<seconds>(system_clock::now().time_since_epoch());
+        return [=] () {
+            seconds now = duration_cast<seconds>(system_clock::now().time_since_epoch());
+            return now.count() - start.count();
+        };
+    }();
+    
     
     ifstream filePathsFile (filePaths);
     ofstream indexedFiles (_indexFilePath);
@@ -158,6 +167,20 @@ IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLine
 
     for ( ; numberOfLinesProcessed != firstLineToProcess; ++numberOfLinesProcessed)
         getline(filePathsFile, path);
+    
+    auto clearMapAndSaveIndex = [&] () {
+        string first_index = mapIndex2StringIndex(wordToIDMap);
+        #ifndef NDEBUG
+        if (not indexValid(first_index, wordToIDMap)) {
+            { ofstream("idxThatCausedException") << first_index; }
+            writeReadableIndexToFile(wordToIDMap, "mapThatCausedException.txt");
+            mapIndex2StringIndex(wordToIDMap);
+        }
+        #endif
+        wordToIDMap.clear();
+        first_idx_word_counter = 0;
+        _index->addStringIndex(move(first_index));
+    };
     
     while (numberOfLinesProcessed <= lastLineToProcess and getline(filePathsFile, path)) {
         cout << path << '\n';
@@ -176,61 +199,36 @@ IndexBuilder::index(string filePaths, size_t firstLineToProcess, size_t lastLine
             wordToIDMap[w->word()].push_back(id);
             delete w;
         }
+        
+        if (secondsRunning() >= maxRunningTime) break; // stop executing if time is up
+        
         if (first_idx_word_counter > merging_treshold) {
-            string first_index = mapIndex2StringIndex(wordToIDMap);
-#ifndef NDEBUG
-            if (not indexValid(first_index, wordToIDMap)) {
-                { ofstream("idxThatCausedException") << first_index; }
-                writeReadableIndexToFile(wordToIDMap, "mapThatCausedException.txt");
-                mapIndex2StringIndex(wordToIDMap);
-            }
-#endif
-            wordToIDMap.clear();
-            first_idx_word_counter = 0;
-            _index->addStringIndex(move(first_index));
+            clearMapAndSaveIndex();
         }
     }
     
     {
         // add the last index
-        string first_index = mapIndex2StringIndex(wordToIDMap);
-#ifndef NDEBUG
-        if (not indexValid(first_index, wordToIDMap)) {
-            { ofstream("idxThatCausedException") << first_index; }
-            writeReadableIndexToFile(wordToIDMap, "mapThatCausedException.txt");
-            mapIndex2StringIndex(wordToIDMap);
-        }
-#endif
-        wordToIDMap.clear();
-        first_idx_word_counter = 0;
-        _index->addStringIndex(move(first_index));
+        clearMapAndSaveIndex();
         ofstream(_databasePath + "/lastLine.txt") << numberOfLinesProcessed;
     }
 
-//    _index->saveIndexes();
-//    _index->saveReadableIndexes();
-//    cout << "almost end\n";
-//    {
-//        string search_word = "argument";
-//        _index->execForEveryDocId(search_word, [&] (docid_t d) {
-//            cout << "df __in that particular index" << to_string(_index->indexInArray()) << ", unftntly__ for " << search_word << ": "
-//                << _index->documentFrequencies()[_index->indexInArray()][_index->indexOfWordInPositionsAndFrequenciesVectors()] << '\n';
-//            cout << d << ' ';
-//        });
-//    }
     cout << "end" << '\n';
     cout << first_idx_word_counter;
 }
 
-bool IndexBuilder::indexMoreLines(std::string file, size_t numberOfLinesToIndex) {
+bool IndexBuilder::indexMoreLines(std::string file, size_t numberOfLinesToIndex, long long seconds) {
     size_t indexedLinesNum;
     ifstream fin (_databasePath + "/lastLine.txt");
     assert(fin);
     fin >> indexedLinesNum;
-    index(file, indexedLinesNum, indexedLinesNum + numberOfLinesToIndex);
+    index(file, indexedLinesNum, indexedLinesNum + numberOfLinesToIndex, seconds);
     
     return false; // TODO: it must return whether
     // the file with lines is exhausted
 }
 
 // always write custom typedefs instead of integers
+bool IndexBuilder::indexForSeconds(std::string filePaths, long long seconds) {
+    return indexMoreLines(filePaths, std::numeric_limits<size_t>::max(), seconds);
+}

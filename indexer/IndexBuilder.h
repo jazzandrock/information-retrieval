@@ -33,11 +33,19 @@ public:
     ~IndexBuilder();
     
     void
-    index(std::string filePaths, size_t firstLineToProcess=0, size_t lastLineToProcess = std::numeric_limits<size_t>::max());
+    index(
+          std::string filePaths,
+          size_t firstLineToProcess = 0,
+          size_t lastLineToProcess = std::numeric_limits<size_t>::max(),
+          long long maxRunningTime = std::numeric_limits<long long>::max());
     
     void loadIndex();
     
-    bool indexMoreLines(std::string filePaths, size_t numberOfLinesToIndex);
+    bool indexForSeconds(std::string filePaths, long long seconds);
+    bool indexMoreLines(
+        std::string filePaths,
+        size_t numberOfLinesToIndex,
+        long long seconds = std::numeric_limits<long long>::max());
     
     void
     indexFile(std::string const& filePath);

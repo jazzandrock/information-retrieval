@@ -32,6 +32,7 @@
 #include <clocale>
 #include "Timer.h"
 #include <regex>
+#include <thread>
 #include <boost/locale.hpp>
 
 
@@ -44,6 +45,7 @@ int main(int /*argc*/, const char * /*argv*/[]) {
         auto loc = gen("en_US.UTF-8");
         locale::global(loc);
     }
+    
     
 //    {
 //        string regex_part = u8"[\\wа-яїєь]+";
@@ -106,16 +108,17 @@ int main(int /*argc*/, const char * /*argv*/[]) {
 // 
     {
         const string prefix = "/Volumes/160GB/do/4_tr/information_retrieval/wiki";
-        const string dbpath = prefix + "/small_db";
+        const string dbpath = prefix + "/db";
         IndexBuilding::IndexBuilder builder(
             dbpath,
             dbpath + "/files_list_processed_with_ids.txt",
             prefix + "/wiki uk 2008/");
 
-//        {
-//            Timer _ (dbpath + "/duration.txt");
-//            builder.indexMoreLines(dbpath + "/list", 10000);
-//        }
+        {
+            Timer _ (dbpath + "/duration.txt");
+//            builder.indexMoreLines(dbpath + "/list", 1000000);
+        builder.indexForSeconds(dbpath + "/list", 3600*3);
+        }
         // total time to index wikipedia: 4401 seconds
 
         
